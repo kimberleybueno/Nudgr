@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-sage: #7A9E7E;
+  --color-sage-dark: #4A6B4E;
+  --color-sage-light: #E8F0E9;
+  --color-sage-faint: #D4E2D5;
+  --color-sage-muted: #97B099;
+  --color-bg: #F4F8F4;
+  --color-charcoal: #2D2D2D;
+  --color-warm: #C4A98A;
+  --color-gold: #C5A33E;
+  --color-urgent: #D4845A;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--color-bg);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+button { font-family: inherit; }
+
+/* hide scrollbars on horizontal scrollers */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@keyframes up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes confetti {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(1.5); }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(122, 158, 126, 0.45); }
+  70%  { box-shadow: 0 0 0 14px rgba(122, 158, 126, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(122, 158, 126, 0); }
+}
+
+.anim-up        { animation: up 0.25s ease both; }
+.anim-fade      { animation: fade-in 0.2s ease both; }
+.anim-slide-up  { animation: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.anim-pulse     { animation: pulse-ring 1.8s infinite; }
+
+/* safe area helpers for iOS PWA */
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+.pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
