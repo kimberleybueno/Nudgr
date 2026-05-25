@@ -20,9 +20,11 @@ interface Props {
   onBack: () => void;
   onNudge: () => void;
   onMessage: () => void;
+  /** When true, render as a panel inside a desktop layout instead of a full-screen takeover. */
+  embedded?: boolean;
 }
 
-export default function PartnerDetail({ person, onBack, onNudge, onMessage }: Props) {
+export default function PartnerDetail({ person, onBack, onNudge, onMessage, embedded = false }: Props) {
   const [nudged, setNudged] = useState(false);
 
   const handleNudge = () => {
@@ -32,11 +34,22 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage }: Pr
   };
 
   return (
-    <div className="anim-up min-h-screen" style={{ background: C.bg }}>
+    <div
+      className={embedded ? "anim-up rounded-3xl overflow-hidden" : "anim-up min-h-screen"}
+      style={{
+        background: C.bg,
+        border: embedded ? `1px solid ${C.faint}` : "none",
+      }}
+    >
       {/* Header */}
-      <div className="px-5 pt-12 pb-5" style={{ background: "#fff" }}>
-        <button onClick={onBack} className="text-[18px] mb-4 w-7 h-7 flex items-center justify-center"
-                style={{ color: C.sage }} aria-label="Back">‹</button>
+      <div
+        className="px-5 pb-5"
+        style={{ background: "#fff", paddingTop: embedded ? 20 : 48 }}
+      >
+        {!embedded && (
+          <button onClick={onBack} className="text-[18px] mb-4 w-7 h-7 flex items-center justify-center"
+                  style={{ color: C.sage }} aria-label="Back">‹</button>
+        )}
         <div className="text-center">
           <div className="relative inline-block">
             <div

@@ -16,6 +16,7 @@ interface Props {
   /** Partners explicitly added to your goals. */
   goalPartners: Partner[];
   userName: string;
+  isDesktop?: boolean;
 }
 
 /** A row in the Circle list — derived from a partner attached to a goal AND/OR pact members */
@@ -45,6 +46,7 @@ const STATUSES: { status: string; online: boolean }[] = [
 
 export default function PeopleTab({
   pacts, setPacts, messages, setMessages, goals, goalPartners, userName,
+  isDesktop = false,
 }: Props) {
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [activePartner, setActivePartner] = useState<string | null>(null);
@@ -139,44 +141,43 @@ export default function PeopleTab({
     }
   };
 
-  /* ---------- Sub-views ---------- */
-
-  if (activeChat) {
-    const pact = pacts.find((p) => p.id === activeChat);
-    if (!pact) { setActiveChat(null); return null; }
-    return (
-      <PactChat
-        pact={pact}
-        messages={messages.filter((m) => m.pactId === activeChat)}
-        userName={userName}
-        onBack={() => { markRead(activeChat); setActiveChat(null); }}
-        onSend={(text) => sendMessage(activeChat, text)}
-        onPostSystem={(text) => postSystem(activeChat, text)}
-      />
-    );
+  /* ---------- Mobile: full-screen takeover for chat or partner detail ---------- */
+  if (!isDesktop) {
+    if (activeChat) {
+      const pact = pacts.find((p) => p.id === activeChat);
+      if (!pact) { setActiveChat(null); return null; }
+      return (
+        <PactChat
+          pact={pact}
+          messages={messages.filter((m) => m.pactId === activeChat)}
+          userName={userName}
+          onBack={() => { markRead(activeChat); setActiveChat(null); }}
+          onSend={(text) => sendMessage(activeChat, text)}
+          onPostSystem={(text) => postSystem(activeChat, text)}
+        />
+      );
+    }
+    if (activePartner) {
+      const person = circle.find((c) => c.id === activePartner);
+      if (!person) { setActivePartner(null); return null; }
+      return (
+        <PartnerDetail
+          person={person}
+          onBack={() => setActivePartner(null)}
+          onNudge={() => sendNudge(person.name)}
+          onMessage={() => {
+            const pact = pacts.find((p) => p.members.some((m) => m.name === person.name));
+            if (pact) { setActivePartner(null); setActiveChat(pact.id); }
+          }}
+        />
+      );
+    }
   }
 
-  if (activePartner) {
-    const person = circle.find((c) => c.id === activePartner);
-    if (!person) { setActivePartner(null); return null; }
-    return (
-      <PartnerDetail
-        person={person}
-        onBack={() => setActivePartner(null)}
-        onNudge={() => sendNudge(person.name)}
-        onMessage={() => {
-          const pact = pacts.find((p) => p.members.some((m) => m.name === person.name));
-          if (pact) { setActivePartner(null); setActiveChat(pact.id); }
-        }}
-      />
-    );
-  }
-
-  /* ---------- Main People view ---------- */
-
-  return (
-    <div className="anim-up pb-2">
-      <div className="px-6 pt-12">
+  /* ---------- The list (Pacts + Circle) — shared between mobile + desktop ---------- */
+  const listColumn = (
+    <>
+      <div className="px-6 pt-12 lg:pt-6">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
@@ -192,7 +193,6 @@ export default function PeopleTab({
         </div>
       </div>
 
-      {/* Pacts */}
       <section className="px-5 pt-5">
         <div className="text-[12px] font-bold tracking-wide mb-2.5" style={{ color: C.sage }}>Pacts</div>
         <div className="flex flex-col gap-1.5">
@@ -200,7 +200,8 @@ export default function PeopleTab({
             <PactRow
               key={pact.id}
               pact={pact}
-              onTap={() => setActiveChat(pact.id)}
+              active={isDesktop && activeChat === pact.id}
+              onTap={() => { setActivePartner(null); setActiveChat(pact.id); markRead(pact.id); }}
               onLongPress={() => togglePin(pact.id)}
             />
           ))}
@@ -212,20 +213,19 @@ export default function PeopleTab({
         </div>
       </section>
 
-      {/* Divider */}
       <div className="px-5 my-3">
         <div className="h-px" style={{ background: C.faint }} />
       </div>
 
-      {/* Circle */}
-      <section className="px-5 pb-24">
+      <section className="px-5 pb-6">
         <div className="text-[12px] font-bold tracking-wide mb-2.5" style={{ color: C.warm }}>Circle</div>
         <div className="flex flex-col gap-1.5">
           {circle.map((p) => (
             <CircleRow
               key={p.id}
               person={p}
-              onTap={() => setActivePartner(p.id)}
+              active={isDesktop && activePartner === p.id}
+              onTap={() => { setActiveChat(null); setActivePartner(p.id); }}
               onNudge={() => sendNudge(p.name)}
             />
           ))}
@@ -236,13 +236,78 @@ export default function PeopleTab({
           )}
         </div>
       </section>
+    </>
+  );
+
+  /* ---------- Desktop: master-detail (list left, active item right) ---------- */
+  if (isDesktop) {
+    const activePact = activeChat ? pacts.find((p) => p.id === activeChat) ?? null : null;
+    const activePerson = activePartner ? circle.find((c) => c.id === activePartner) ?? null : null;
+    return (
+      <div className="anim-up flex gap-6 items-start px-4 py-4">
+        {/* List column */}
+        <div
+          className="shrink-0 rounded-3xl overflow-hidden"
+          style={{ width: 380, background: "#fff", border: `1px solid ${C.faint}` }}
+        >
+          {listColumn}
+        </div>
+
+        {/* Detail column */}
+        <div className="flex-1 min-w-0 sticky top-4">
+          {activePact ? (
+            <PactChat
+              embedded
+              pact={activePact}
+              messages={messages.filter((m) => m.pactId === activePact.id)}
+              userName={userName}
+              onBack={() => setActiveChat(null)}
+              onSend={(text) => sendMessage(activePact.id, text)}
+              onPostSystem={(text) => postSystem(activePact.id, text)}
+            />
+          ) : activePerson ? (
+            <PartnerDetail
+              embedded
+              person={activePerson}
+              onBack={() => setActivePartner(null)}
+              onNudge={() => sendNudge(activePerson.name)}
+              onMessage={() => {
+                const pact = pacts.find((p) => p.members.some((m) => m.name === activePerson.name));
+                if (pact) { setActivePartner(null); setActiveChat(pact.id); }
+              }}
+            />
+          ) : (
+            <EmptyDetail />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------- Mobile: just the list ---------- */
+  return <div className="anim-up pb-2">{listColumn}</div>;
+}
+
+function EmptyDetail() {
+  return (
+    <div
+      className="rounded-3xl flex flex-col items-center justify-center text-center py-24 px-6"
+      style={{ background: "#fff", border: `1px dashed ${C.faint}`, minHeight: 500 }}
+    >
+      <div className="text-5xl mb-3 opacity-50">👈</div>
+      <div className="text-[15px] font-bold mb-2" style={{ color: C.sageDark }}>
+        Pick a Pact or partner
+      </div>
+      <div className="text-[12px] max-w-[260px]" style={{ color: C.muted }}>
+        Open a Pact to chat, or open a partner to nudge them and see your shared goals.
+      </div>
     </div>
   );
 }
 
 /* ---------- Row components ---------- */
 
-function PactRow({ pact, onTap, onLongPress }: { pact: Pact; onTap: () => void; onLongPress: () => void }) {
+function PactRow({ pact, active, onTap, onLongPress }: { pact: Pact; active?: boolean; onTap: () => void; onLongPress: () => void }) {
   const timer = useTimedHold(onLongPress);
   return (
     <button
@@ -252,8 +317,12 @@ function PactRow({ pact, onTap, onLongPress }: { pact: Pact; onTap: () => void; 
       onPointerLeave={timer.end}
       className="relative text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl"
       style={{
-        background: pact.pinned ? `linear-gradient(135deg, ${C.light}, #f0f6f0)` : "#fff",
-        border: `1px solid ${pact.unread > 0 ? C.sage + "55" : C.faint}`,
+        background: active
+          ? `linear-gradient(135deg, ${C.sage}1a, ${C.light})`
+          : pact.pinned
+            ? `linear-gradient(135deg, ${C.light}, #f0f6f0)`
+            : "#fff",
+        border: `1px solid ${active ? C.sage : pact.unread > 0 ? C.sage + "55" : C.faint}`,
       }}
     >
       {pact.pinned && <span className="absolute top-2 right-2.5 text-[10px]">📌</span>}
@@ -296,13 +365,16 @@ function PactRow({ pact, onTap, onLongPress }: { pact: Pact; onTap: () => void; 
 }
 
 function CircleRow({
-  person, onTap, onNudge,
-}: { person: CirclePerson; onTap: () => void; onNudge: () => void }) {
+  person, active, onTap, onNudge,
+}: { person: CirclePerson; active?: boolean; onTap: () => void; onNudge: () => void }) {
   return (
     <button
       onClick={onTap}
       className="text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl"
-      style={{ background: "#fff", border: `1px solid ${C.faint}` }}
+      style={{
+        background: active ? `linear-gradient(135deg, ${C.warm}15, ${C.light})` : "#fff",
+        border: `1px solid ${active ? C.warm : C.faint}`,
+      }}
     >
       <div className="relative shrink-0">
         <div

@@ -11,6 +11,8 @@ interface Props {
   onBack: () => void;
   onSend: (text: string) => void;
   onPostSystem: (text: string) => void;
+  /** When true, render as a panel inside a desktop layout instead of a full-screen takeover. */
+  embedded?: boolean;
 }
 
 const CHECKIN_RESPONSES = [
@@ -20,7 +22,7 @@ const CHECKIN_RESPONSES = [
   { label: "Need a nudge 😬",  color: C.urgent,   sysSuffix: "Need a nudge 😬" },
 ];
 
-export default function PactChat({ pact, messages, userName, onBack, onSend, onPostSystem }: Props) {
+export default function PactChat({ pact, messages, userName, onBack, onSend, onPostSystem, embedded = false }: Props) {
   const [text, setText] = useState("");
   const [responded, setResponded] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -42,14 +44,29 @@ export default function PactChat({ pact, messages, userName, onBack, onSend, onP
   };
 
   return (
-    <div className="anim-up flex flex-col" style={{ minHeight: "100vh", background: C.bg }}>
+    <div
+      className={embedded ? "anim-up flex flex-col rounded-3xl overflow-hidden" : "anim-up flex flex-col"}
+      style={{
+        minHeight: embedded ? 0 : "100vh",
+        height: embedded ? "calc(100vh - 32px)" : "auto",
+        background: C.bg,
+        border: embedded ? `1px solid ${C.faint}` : "none",
+      }}
+    >
       {/* Header */}
       <div
-        className="px-4 pt-safe flex items-center gap-3"
-        style={{ background: "#fff", borderBottom: `1px solid ${C.faint}`, paddingTop: 48, paddingBottom: 14 }}
+        className="px-4 flex items-center gap-3"
+        style={{
+          background: "#fff",
+          borderBottom: `1px solid ${C.faint}`,
+          paddingTop: embedded ? 16 : 48,
+          paddingBottom: 14,
+        }}
       >
-        <button onClick={onBack} className="text-[18px] w-7 h-7 flex items-center justify-center"
-                style={{ color: C.sage }} aria-label="Back">‹</button>
+        {!embedded && (
+          <button onClick={onBack} className="text-[18px] w-7 h-7 flex items-center justify-center"
+                  style={{ color: C.sage }} aria-label="Back">‹</button>
+        )}
         <span className="text-[20px]">{pact.emoji}</span>
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-bold truncate" style={{ color: C.charcoal }}>{pact.name}</div>
@@ -113,8 +130,12 @@ export default function PactChat({ pact, messages, userName, onBack, onSend, onP
 
       {/* Composer */}
       <div
-        className="px-4 py-3 pb-safe flex items-center gap-2"
-        style={{ background: "#fff", borderTop: `1px solid ${C.faint}`, paddingBottom: 32 }}
+        className="px-4 py-3 flex items-center gap-2"
+        style={{
+          background: "#fff",
+          borderTop: `1px solid ${C.faint}`,
+          paddingBottom: embedded ? 12 : 32,
+        }}
       >
         <input
           value={text}

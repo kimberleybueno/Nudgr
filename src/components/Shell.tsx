@@ -25,27 +25,24 @@ export default function Shell() {
   const [messages, setMessages] = useLocalStorage<Message[]>(STORAGE_KEYS.messages, SEED_MESSAGES);
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: isDesktop ? "#E2EAE3" : "#F4F8F4" }}
-    >
+    <div className="min-h-screen" style={{ background: "#F4F8F4" }}>
       {isDesktop && <SideNav active={tab} onChange={setTab} />}
 
-      {/* On mobile: full-width column. On desktop: centered phone-shaped card with sidebar on the left. */}
-      <div className="lg:pl-[72px] flex justify-center lg:py-6">
+      {/*
+        Mobile: full-width column up to 460px (phone-sized), bottom nav.
+        Desktop: sidebar offset, content fills width up to 1200px,
+                 multi-column layouts within each tab.
+      */}
+      <div className="lg:pl-[72px]">
         <main
-          className="w-full mx-auto lg:rounded-[28px] lg:overflow-hidden"
+          className="w-full mx-auto"
           style={{
-            maxWidth: 460,
-            background: "#F4F8F4",
-            paddingBottom: isDesktop ? 24 : 88,
-            minHeight: isDesktop ? "calc(100vh - 48px)" : "100vh",
-            boxShadow: isDesktop
-              ? "0 12px 40px rgba(45, 60, 47, 0.12), 0 2px 6px rgba(45, 60, 47, 0.05)"
-              : "none",
+            maxWidth: isDesktop ? 1200 : 460,
+            paddingBottom: isDesktop ? 0 : 88,
+            minHeight: "100vh",
           }}
         >
-          {tab === "home" && <HomeTab user={user} setUser={setUser} />}
+          {tab === "home" && <HomeTab user={user} setUser={setUser} isDesktop={isDesktop} />}
 
           {tab === "people" && (
             <PeopleTab
@@ -56,6 +53,7 @@ export default function Shell() {
               goals={user.goals}
               goalPartners={user.partners}
               userName={user.name}
+              isDesktop={isDesktop}
             />
           )}
 

@@ -15,6 +15,7 @@ import Confetti, { type ConfettiTier } from "./Confetti";
 interface Props {
   user: UserData;
   setUser: React.Dispatch<React.SetStateAction<UserData>>;
+  isDesktop?: boolean;
 }
 
 const id = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
@@ -26,7 +27,7 @@ const dayLabel = (day: number) => {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
-export default function HomeTab({ user, setUser }: Props) {
+export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
   const [selectedDay, setSelectedDay] = useState<number>(() => todayDayOfMonth());
   const [confetti, setConfetti] = useState<ConfettiTier | null>(null);
 
@@ -224,43 +225,71 @@ export default function HomeTab({ user, setUser }: Props) {
     });
   };
 
+  const hero = (
+    <Hero
+      name={user.name}
+      todayPct={heroMetrics.pct}
+      doneToday={heroMetrics.done}
+      totalToday={heroMetrics.total}
+      streak={user.streak}
+      selectedDayLabel={todayLabelStr}
+    />
+  );
+
+  const calendar = (
+    <Calendar selectedDay={selectedDay} onSelect={setSelectedDay} daysWithTasks={daysWithTasks} />
+  );
+
+  const taskList = (
+    <TaskList
+      tasks={visibleTasks}
+      goals={user.goals}
+      partners={user.partners}
+      selectedDay={selectedDay}
+      isToday={isToday}
+      dayLabel={isToday ? "today" : dayLabel(selectedDay)}
+      onAddStandalone={addStandalone}
+      onUpdateTask={updateTask}
+      onDeleteTask={deleteTask}
+      onToggleTask={toggleTask}
+      onReorder={reorderTask}
+    />
+  );
+
+  const goalGrid = (
+    <GoalGrid
+      goals={user.goals}
+      onAddTaskToGoal={addTaskToGoal}
+      onToggleTaskInGoal={(_goalId, taskId) => toggleTask(taskId)}
+    />
+  );
+
+  /* ---------- Desktop: 2-column body under a full-width hero ---------- */
+  if (isDesktop) {
+    return (
+      <div className="anim-up">
+        {hero}
+        <div className="flex gap-6 px-4 pt-4 items-start">
+          <div className="flex-1 min-w-0">
+            {calendar}
+            {taskList}
+          </div>
+          <div className="w-[400px] shrink-0 sticky top-4">
+            {goalGrid}
+          </div>
+        </div>
+        <Confetti tier={confetti} onDone={() => setConfetti(null)} />
+      </div>
+    );
+  }
+
+  /* ---------- Mobile: stacked single column ---------- */
   return (
     <div className="anim-up">
-      <Hero
-        name={user.name}
-        todayPct={heroMetrics.pct}
-        doneToday={heroMetrics.done}
-        totalToday={heroMetrics.total}
-        streak={user.streak}
-        selectedDayLabel={todayLabelStr}
-      />
-
-      <Calendar
-        selectedDay={selectedDay}
-        onSelect={setSelectedDay}
-        daysWithTasks={daysWithTasks}
-      />
-
-      <TaskList
-        tasks={visibleTasks}
-        goals={user.goals}
-        partners={user.partners}
-        selectedDay={selectedDay}
-        isToday={isToday}
-        dayLabel={isToday ? "today" : dayLabel(selectedDay)}
-        onAddStandalone={addStandalone}
-        onUpdateTask={updateTask}
-        onDeleteTask={deleteTask}
-        onToggleTask={toggleTask}
-        onReorder={reorderTask}
-      />
-
-      <GoalGrid
-        goals={user.goals}
-        onAddTaskToGoal={addTaskToGoal}
-        onToggleTaskInGoal={(_goalId, taskId) => toggleTask(taskId)}
-      />
-
+      {hero}
+      {calendar}
+      {taskList}
+      {goalGrid}
       <Confetti tier={confetti} onDone={() => setConfetti(null)} />
     </div>
   );
