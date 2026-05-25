@@ -1,0 +1,355 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { C } from "@/lib/colors";
+import type { Pact, Message, Goal, Partner } from "@/types";
+import PactChat from "./PactChat";
+import PartnerDetail from "./PartnerDetail";
+
+interface Props {
+  pacts: Pact[];
+  setPacts: React.Dispatch<React.SetStateAction<Pact[]>>;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  /** Goals from the v2 model — used to derive Circle (people who hold you accountable). */
+  goals: Goal[];
+  /** Partners explicitly added to your goals. */
+  goalPartners: Partner[];
+  userName: string;
+}
+
+/** A row in the Circle list — derived from a partner attached to a goal AND/OR pact members */
+interface CirclePerson {
+  id: string;
+  name: string;
+  initial: string;
+  color: string;
+  /** Synthetic "online" + status for demo (no real presence yet) */
+  status: string;
+  online: boolean;
+  /** Streak for display (synthetic) */
+  streak: number;
+  /** Their own goals (we don't have this yet — empty for now) */
+  goals: { title: string; pct: number }[];
+  /** Your goals they're assigned to */
+  sharedGoals: string[];
+}
+
+/** Status fixtures — rotate through these for demo realism */
+const STATUSES: { status: string; online: boolean }[] = [
+  { status: "Active now", online: true },
+  { status: "2h ago",     online: false },
+  { status: "Yesterday",  online: false },
+  { status: "Active now", online: true },
+];
+
+export default function PeopleTab({
+  pacts, setPacts, messages, setMessages, goals, goalPartners, userName,
+}: Props) {
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [activePartner, setActivePartner] = useState<string | null>(null);
+
+  // Sort pacts: pinned first, then alphabetically (proxy for "most recent")
+  const sortedPacts = useMemo(
+    () => [...pacts].sort((a, b) => Number(b.pinned) - Number(a.pinned)),
+    [pacts]
+  );
+
+  // Derive Circle: union of goal partners + unique pact members.
+  // For each person, also figure out which of YOUR goals they're holding you accountable on.
+  const circle = useMemo<CirclePerson[]>(() => {
+    const map = new Map<string, CirclePerson>();
+
+    // Add goal-partners first (their data is cleaner)
+    goalPartners.forEach((p, i) => {
+      const sharedGoals = goals.filter((g) => g.tasks.some((t) => t.partnerId === p.id)).map((g) => g.name);
+      map.set(p.name, {
+        id: p.id,
+        name: p.name,
+        initial: p.initial,
+        color: p.color,
+        status: STATUSES[i % STATUSES.length].status,
+        online: STATUSES[i % STATUSES.length].online,
+        streak: 9 - i * 2,
+        goals: [],
+        sharedGoals,
+      });
+    });
+
+    // Add pact members not already in the map
+    pacts.forEach((pact) => {
+      pact.members.forEach((m, i) => {
+        if (m.name === userName || m.name === "me") return;
+        if (map.has(m.name)) return;
+        map.set(m.name, {
+          id: `pm_${m.name}`,
+          name: m.name,
+          initial: m.ini,
+          color: m.col,
+          status: STATUSES[(i + 1) % STATUSES.length].status,
+          online: STATUSES[(i + 1) % STATUSES.length].online,
+          streak: 5 + i,
+          goals: [],
+          sharedGoals: [],
+        });
+      });
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.online === b.online ? 0 : a.online ? -1 : 1
+    );
+  }, [goalPartners, pacts, goals, userName]);
+
+  /* ---------- Pact actions ---------- */
+
+  const togglePin = (pactId: string) => {
+    setPacts((cur) => cur.map((p) => (p.id === pactId ? { ...p, pinned: !p.pinned } : p)));
+  };
+
+  const markRead = (pactId: string) => {
+    setPacts((cur) => cur.map((p) => (p.id === pactId ? { ...p, unread: 0 } : p)));
+  };
+
+  const sendMessage = (pactId: string, text: string) => {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const newMsg: Message = {
+      id: Date.now(),
+      pactId,
+      user: "me",
+      text,
+      time,
+      type: "msg",
+      read: false,
+    };
+    setMessages((cur) => [...cur, newMsg]);
+    setPacts((cur) => cur.map((p) => (p.id === pactId ? { ...p, last: `You: ${text}`, time } : p)));
+  };
+
+  const postSystem = (pactId: string, text: string) => {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const newMsg: Message = { id: Date.now(), pactId, user: "system", text, time, type: "system" };
+    setMessages((cur) => [...cur, newMsg]);
+  };
+
+  const sendNudge = (personName: string) => {
+    // Find a pact that includes this person (so the nudge has a place to land)
+    const pact = pacts.find((p) => p.members.some((m) => m.name === personName));
+    if (pact) {
+      postSystem(pact.id, `${userName} nudged ${personName} 👋`);
+    }
+  };
+
+  /* ---------- Sub-views ---------- */
+
+  if (activeChat) {
+    const pact = pacts.find((p) => p.id === activeChat);
+    if (!pact) { setActiveChat(null); return null; }
+    return (
+      <PactChat
+        pact={pact}
+        messages={messages.filter((m) => m.pactId === activeChat)}
+        userName={userName}
+        onBack={() => { markRead(activeChat); setActiveChat(null); }}
+        onSend={(text) => sendMessage(activeChat, text)}
+        onPostSystem={(text) => postSystem(activeChat, text)}
+      />
+    );
+  }
+
+  if (activePartner) {
+    const person = circle.find((c) => c.id === activePartner);
+    if (!person) { setActivePartner(null); return null; }
+    return (
+      <PartnerDetail
+        person={person}
+        onBack={() => setActivePartner(null)}
+        onNudge={() => sendNudge(person.name)}
+        onMessage={() => {
+          const pact = pacts.find((p) => p.members.some((m) => m.name === person.name));
+          if (pact) { setActivePartner(null); setActiveChat(pact.id); }
+        }}
+      />
+    );
+  }
+
+  /* ---------- Main People view ---------- */
+
+  return (
+    <div className="anim-up pb-2">
+      <div className="px-6 pt-12">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
+              ACCOUNTABILITY
+            </p>
+            <h1 className="text-[24px] font-light mt-1" style={{ color: C.charcoal }}>People</h1>
+          </div>
+          <button
+            className="px-4 py-2 rounded-xl text-[12px] font-bold text-white"
+            style={{ background: C.sage }}
+            onClick={() => alert("Invite flow — coming soon. Your invite link: app.mynudgr.com/invite/" + userName)}
+          >+ Invite</button>
+        </div>
+      </div>
+
+      {/* Pacts */}
+      <section className="px-5 pt-5">
+        <div className="text-[12px] font-bold tracking-wide mb-2.5" style={{ color: C.sage }}>Pacts</div>
+        <div className="flex flex-col gap-1.5">
+          {sortedPacts.map((pact) => (
+            <PactRow
+              key={pact.id}
+              pact={pact}
+              onTap={() => setActiveChat(pact.id)}
+              onLongPress={() => togglePin(pact.id)}
+            />
+          ))}
+          {sortedPacts.length === 0 && (
+            <div className="text-center py-6 text-[12px]" style={{ color: C.muted }}>
+              No pacts yet. Tap + Invite to create one.
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="px-5 my-3">
+        <div className="h-px" style={{ background: C.faint }} />
+      </div>
+
+      {/* Circle */}
+      <section className="px-5 pb-24">
+        <div className="text-[12px] font-bold tracking-wide mb-2.5" style={{ color: C.warm }}>Circle</div>
+        <div className="flex flex-col gap-1.5">
+          {circle.map((p) => (
+            <CircleRow
+              key={p.id}
+              person={p}
+              onTap={() => setActivePartner(p.id)}
+              onNudge={() => sendNudge(p.name)}
+            />
+          ))}
+          {circle.length === 0 && (
+            <div className="text-center py-6 text-[12px]" style={{ color: C.muted }}>
+              Add a partner to a goal to build your Circle.
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* ---------- Row components ---------- */
+
+function PactRow({ pact, onTap, onLongPress }: { pact: Pact; onTap: () => void; onLongPress: () => void }) {
+  const timer = useTimedHold(onLongPress);
+  return (
+    <button
+      onClick={onTap}
+      onPointerDown={timer.start}
+      onPointerUp={timer.end}
+      onPointerLeave={timer.end}
+      className="relative text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl"
+      style={{
+        background: pact.pinned ? `linear-gradient(135deg, ${C.light}, #f0f6f0)` : "#fff",
+        border: `1px solid ${pact.unread > 0 ? C.sage + "55" : C.faint}`,
+      }}
+    >
+      {pact.pinned && <span className="absolute top-2 right-2.5 text-[10px]">📌</span>}
+      <div
+        className="w-[42px] h-[42px] rounded-xl flex items-center justify-center text-[20px] shrink-0"
+        style={{ background: `linear-gradient(135deg, ${C.sage}33, ${C.light})` }}
+      >{pact.emoji}</div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[14px] font-bold truncate" style={{ color: C.charcoal }}>{pact.name}</span>
+          {pact.unread > 0 && (
+            <span className="text-[9px] font-extrabold text-white px-1.5 py-0.5 rounded-md" style={{ background: C.sage }}>
+              {pact.unread}
+            </span>
+          )}
+        </div>
+        <div className="text-[11px] truncate mt-0.5" style={{ color: C.muted }}>{pact.last}</div>
+      </div>
+
+      <div className="text-right shrink-0">
+        <div className="text-[10px]" style={{ color: C.muted }}>{pact.time}</div>
+        <div className="flex mt-1">
+          {pact.members.slice(0, 3).map((m, i) => (
+            <span
+              key={i}
+              className="rounded-full text-[7px] font-extrabold flex items-center justify-center text-white"
+              style={{
+                width: 18, height: 18,
+                background: m.col,
+                border: `1.5px solid ${pact.pinned ? "#f0f6f0" : "#fff"}`,
+                marginLeft: i ? -5 : 0,
+              }}
+            >{m.ini}</span>
+          ))}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function CircleRow({
+  person, onTap, onNudge,
+}: { person: CirclePerson; onTap: () => void; onNudge: () => void }) {
+  return (
+    <button
+      onClick={onTap}
+      className="text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl"
+      style={{ background: "#fff", border: `1px solid ${C.faint}` }}
+    >
+      <div className="relative shrink-0">
+        <div
+          className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-white text-[16px] font-bold"
+          style={{ background: person.color }}
+        >{person.initial}</div>
+        {person.online && (
+          <div className="absolute bottom-0 right-0 rounded-full"
+               style={{ width: 10, height: 10, background: "#4CAF50", border: "2px solid #fff" }} />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-bold" style={{ color: C.charcoal }}>{person.name}</div>
+        <div className="text-[11px] mt-0.5" style={{ color: C.muted }}>{person.status}</div>
+        {person.sharedGoals.length > 0 && (
+          <div className="text-[10px] mt-0.5 truncate" style={{ color: C.sage }}>
+            Holding you accountable on: {person.sharedGoals.join(", ")}
+          </div>
+        )}
+      </div>
+
+      <div className="text-right shrink-0">
+        <div className="text-[13px] font-extrabold" style={{ color: C.gold }}>🔥 {person.streak}</div>
+        <span
+          onClick={(e) => { e.stopPropagation(); onNudge(); }}
+          className="inline-block mt-1 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+          style={{ background: C.sage + "1f", color: C.sage }}
+        >👋 Nudge</span>
+      </div>
+    </button>
+  );
+}
+
+/* ---------- Long-press hook ---------- */
+
+function useTimedHold(onLongPress: () => void, ms = 500) {
+  const start = (_e: React.PointerEvent) => {
+    const t = setTimeout(() => {
+      onLongPress();
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, ms);
+    (start as unknown as { _t?: ReturnType<typeof setTimeout> })._t = t;
+  };
+  const end = () => {
+    const t = (start as unknown as { _t?: ReturnType<typeof setTimeout> })._t;
+    if (t) clearTimeout(t);
+  };
+  return { start, end };
+}

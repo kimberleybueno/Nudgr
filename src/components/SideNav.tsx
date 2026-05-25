@@ -5,8 +5,7 @@ import type { TabId } from "@/types";
 
 const ITEMS: { id: TabId; icon: string; label: string }[] = [
   { id: "home",     icon: "🏠", label: "Home" },
-  { id: "pacts",    icon: "💬", label: "Pacts" },
-  { id: "circle",   icon: "🤝", label: "Circle" },
+  { id: "people",   icon: "👥", label: "People" },
   { id: "settings", icon: "⚙️", label: "Settings" },
 ];
 

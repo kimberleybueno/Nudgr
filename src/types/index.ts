@@ -45,7 +45,7 @@ export interface UserData {
   completionDates: string[];  // ISO dates with at least one completion
 }
 
-export type TabId = "home" | "pacts" | "circle" | "settings";
+export type TabId = "home" | "people" | "settings";
 export type GoalFilter = "all" | "short" | "long";
 
 /* =========================================================================
