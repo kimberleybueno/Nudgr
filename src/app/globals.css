@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-sage: #7A9E7E;
+  --color-sage:      #7A9E7E;
   --color-sage-dark: #4A6B4E;
-  --color-sage-light: #E8F0E9;
-  --color-sage-faint: #D4E2D5;
-  --color-sage-muted: #97B099;
-  --color-bg: #F4F8F4;
-  --color-charcoal: #2D2D2D;
-  --color-warm: #C4A98A;
-  --color-gold: #C5A33E;
-  --color-urgent: #D4845A;
+  --color-sage-light:#E8F0E9;
+  --color-sage-faint:#D4E2D5;
+  --color-sage-muted:#97B099;
+  --color-bg:        #F4F8F4;
+  --color-charcoal:  #2D2D2D;
+  --color-warm:      #C4A98A;
+  --color-gold:      #C5A33E;
+  --color-urgent:    #D4845A;
+  --color-purple:    #7D6B8A;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
     Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -30,6 +31,7 @@ button { font-family: inherit; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
+/* ---------- Page / list entrance ---------- */
 @keyframes up {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -42,20 +44,38 @@ button { font-family: inherit; }
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
-@keyframes confetti {
-  0%   { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-20px) scale(1.5); }
+
+.anim-up        { animation: up 0.25s ease both; }
+.anim-fade      { animation: fade-in 0.2s ease both; }
+.anim-slide-up  { animation: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* ---------- Confetti (3 tiers) ---------- */
+@keyframes cS {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, -60px)) scale(0.3); }
 }
+@keyframes cM {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, -120px)) scale(0.2) rotate(var(--rot, 360deg)); }
+}
+@keyframes cL {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, -180px)) scale(0.15) rotate(var(--rot, 720deg)); }
+}
+@keyframes cB {
+  0%   { opacity: 0; transform: scale(0.5); }
+  30%  { opacity: 1; transform: scale(1.1); }
+  50%  { transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9) translateY(-20px); }
+}
+
+/* ---------- Misc ---------- */
 @keyframes pulse-ring {
   0%   { box-shadow: 0 0 0 0 rgba(122, 158, 126, 0.45); }
   70%  { box-shadow: 0 0 0 14px rgba(122, 158, 126, 0); }
   100% { box-shadow: 0 0 0 0 rgba(122, 158, 126, 0); }
 }
-
-.anim-up        { animation: up 0.25s ease both; }
-.anim-fade      { animation: fade-in 0.2s ease both; }
-.anim-slide-up  { animation: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.anim-pulse     { animation: pulse-ring 1.8s infinite; }
+.anim-pulse { animation: pulse-ring 1.8s infinite; }
 
 /* safe area helpers for iOS PWA */
 .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }

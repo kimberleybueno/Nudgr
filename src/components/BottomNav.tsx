@@ -4,59 +4,40 @@ import { C } from "@/lib/colors";
 import type { TabId } from "@/types";
 
 const ITEMS: { id: TabId; icon: string; label: string }[] = [
-  { id: "home", icon: "🏠", label: "Home" },
-  { id: "pacts", icon: "💬", label: "Pacts" },
-  { id: "circle", icon: "👥", label: "Circle" },
-  { id: "profile", icon: "👤", label: "Profile" },
+  { id: "home",     icon: "🏠", label: "Home" },
+  { id: "pacts",    icon: "💬", label: "Pacts" },
+  { id: "circle",   icon: "🤝", label: "Circle" },
+  { id: "settings", icon: "⚙️", label: "Settings" },
 ];
 
 interface Props {
   active: TabId;
   onChange: (t: TabId) => void;
-  onCreate: () => void;
 }
 
-export default function BottomNav({ active, onChange, onCreate }: Props) {
+export default function BottomNav({ active, onChange }: Props) {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 bg-white pb-safe"
-      style={{
-        borderTop: `1px solid ${C.faint}`,
-        boxShadow: "0 -4px 20px rgba(45,45,45,0.04)",
-      }}
+      className="fixed bottom-0 left-0 right-0 z-30 pb-safe"
+      style={{ background: "#fff", borderTop: `1px solid ${C.faint}` }}
     >
-      <div className="relative flex items-stretch h-[64px] max-w-[640px] mx-auto">
-        {ITEMS.slice(0, 2).map((it) => (
-          <TabBtn key={it.id} item={it} active={active === it.id} onClick={() => onChange(it.id)} />
-        ))}
-        <div className="flex-1 flex items-center justify-center">
-          <button
-            onClick={onCreate}
-            aria-label="Create goal"
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl font-light -mt-6"
-            style={{
-              background: `linear-gradient(165deg, ${C.sageDark}, ${C.sage})`,
-              boxShadow: "0 8px 20px rgba(74, 107, 78, 0.35)",
-            }}
-          >+</button>
-        </div>
-        {ITEMS.slice(2).map((it) => (
-          <TabBtn key={it.id} item={it} active={active === it.id} onClick={() => onChange(it.id)} />
-        ))}
+      <div className="max-w-[440px] mx-auto flex" style={{ paddingTop: 10, paddingBottom: 14 }}>
+        {ITEMS.map((it) => {
+          const isActive = active === it.id;
+          return (
+            <button
+              key={it.id}
+              onClick={() => onChange(it.id)}
+              className="flex-1 flex flex-col items-center gap-0.5"
+              style={{ opacity: isActive ? 1 : 0.5 }}
+            >
+              <span className="text-[22px]">{it.icon}</span>
+              <span className="text-[9px] font-semibold"
+                    style={{ color: isActive ? C.sageDark : C.muted }}>{it.label}</span>
+            </button>
+          );
+        })}
       </div>
     </nav>
-  );
-}
-
-function TabBtn({ item, active, onClick }: { item: typeof ITEMS[number]; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex-1 flex flex-col items-center justify-center gap-0.5"
-      style={{ color: active ? C.sageDark : C.muted }}
-    >
-      <span className="text-[20px]" style={{ opacity: active ? 1 : 0.55 }}>{item.icon}</span>
-      <span className="text-[10px] font-bold tracking-wide">{item.label}</span>
-    </button>
   );
 }

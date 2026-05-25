@@ -1,87 +1,111 @@
-import type { Todo, Goal, Pact, Message } from "@/types";
+import type { UserData, Task, Goal, Partner, Pact, Message } from "@/types";
 
-const today = () => new Date().toISOString().slice(0, 10);
-const inDays = (n: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
+const today = new Date();
+const todayDay = today.getDate();
+const todayIso = today.toISOString().slice(0, 10);
+const daysAgo = (n: number) => {
+  const d = new Date(today);
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+};
+const monthLabel = (offset: number) => {
+  const d = new Date(today);
+  d.setMonth(d.getMonth() + offset);
+  return d.toLocaleString(undefined, { month: "short", year: "numeric" });
+};
+const isoForOffset = (offset: number) => {
+  const d = new Date(today);
+  d.setMonth(d.getMonth() + offset);
   return d.toISOString().slice(0, 10);
 };
 
-export const SEED_TODOS: Todo[] = [
-  { id: "t1", text: "Reply to Sara's email", done: false, added: today(), priority: true, overdue: false },
-  { id: "t2", text: "Buy oat milk", done: false, added: today(), priority: false, overdue: false },
-  { id: "t3", text: "Schedule dentist", done: false, added: inDays(-3), priority: false, overdue: true },
+const id = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
+
+export const SEED_PARTNERS: Partner[] = [
+  { id: "p_maya",   name: "Maya",   initial: "M", color: "#C4A98A" },
+  { id: "p_jordan", name: "Jordan", initial: "J", color: "#7A9E7E" },
 ];
+
+const t = (overrides: Partial<Task>): Task => ({
+  id: id("t"),
+  text: "",
+  done: false,
+  star: false,
+  overdue: false,
+  goalId: null,
+  partnerId: null,
+  due: todayDay,
+  recurring: null,
+  createdAt: todayIso,
+  ...overrides,
+});
+
+const marathonId = "g_marathon";
+const launchId   = "g_launch";
+const readId     = "g_read";
 
 export const SEED_GOALS: Goal[] = [
   {
-    id: "g1",
-    title: "Run 5k three times a week",
+    id: marathonId,
     emoji: "🏃‍♀️",
-    type: "weekly",
-    deadline: inDays(3),
-    streak: 4,
-    muted: false,
-    linkedTo: "g4",
-    partner: { name: "Maya", ini: "M", col: "#C4A98A" },
-    today: [
-      { t: "Morning run (3k)", done: true },
-      { t: "Stretch 10 min", done: false },
-    ],
-    allTasks: [
-      { t: "Morning run (3k)", done: true, due: today() },
-      { t: "Stretch 10 min", done: false, due: today() },
-      { t: "Long run Saturday", done: false, due: inDays(2) },
+    name: "Marathon Training",
+    color: "#7A9E7E",
+    deadline: monthLabel(2),
+    deadlineDate: isoForOffset(2),
+    tasks: [
+      t({ text: "Morning 5k", goalId: marathonId, recurring: "daily" }),
+      t({ text: "Long run Saturday", goalId: marathonId, due: todayDay + 3, recurring: "weekly" }),
+      t({ text: "Stretch 10 min", goalId: marathonId, recurring: "daily", done: true, completedAt: todayIso }),
     ],
   },
   {
-    id: "g2",
-    title: "Read 20 mins before bed",
-    emoji: "📖",
-    type: "daily",
-    deadline: today(),
-    streak: 12,
-    muted: false,
-    linkedTo: null,
-    partner: null,
-    today: [{ t: "Read 20 min", done: false }],
-    allTasks: [{ t: "Read 20 min", done: false, due: today() }],
-  },
-  {
-    id: "g3",
-    title: "Launch Nudgr beta",
+    id: launchId,
     emoji: "🚀",
-    type: "monthly",
-    deadline: inDays(18),
-    streak: 0,
-    muted: false,
-    linkedTo: "g4",
-    partner: { name: "Jordan", ini: "J", col: "#7A9E7E" },
-    today: [],
-    allTasks: [
-      { t: "Finalize onboarding copy", done: true, due: inDays(-2) },
-      { t: "Set up analytics", done: false, due: inDays(5) },
-      { t: "Invite 20 beta users", done: false, due: inDays(10) },
+    name: "Nudgr Launch",
+    color: "#C4A98A",
+    deadline: monthLabel(1),
+    deadlineDate: isoForOffset(1),
+    tasks: [
+      t({ text: "Finalize onboarding copy", goalId: launchId, done: true, completedAt: daysAgo(1), createdAt: daysAgo(5) }),
+      t({ text: "Set up analytics", goalId: launchId, due: todayDay + 4 }),
+      t({ text: "Invite 20 beta users", goalId: launchId, due: todayDay + 7 }),
     ],
   },
   {
-    id: "g4",
-    title: "Build a healthier daily rhythm",
-    emoji: "🌱",
-    type: "longterm",
-    deadline: inDays(120),
-    streak: 0,
-    muted: false,
-    linkedTo: null,
-    partner: null,
-    today: [],
-    allTasks: [
-      { t: "Establish morning routine", done: true },
-      { t: "Move daily", done: false },
-      { t: "Sleep 7+ hrs", done: false },
+    id: readId,
+    emoji: "📚",
+    name: "2026 Reading",
+    color: "#7D6B8A",
+    deadline: monthLabel(6),
+    deadlineDate: isoForOffset(6),
+    tasks: [
+      t({ text: "Read 20 min", goalId: readId, recurring: "daily" }),
+      t({ text: "Finish current book", goalId: readId, due: todayDay + 5 }),
     ],
   },
 ];
+
+export const SEED_STANDALONE: Task[] = [
+  t({ text: "Reply to Sara's email", star: true }),
+  t({ text: "Buy oat milk", due: null }),
+  t({ text: "Schedule dentist", due: null, createdAt: daysAgo(5), overdue: true }),
+];
+
+export const SEED_USER: UserData = {
+  name: "friend",
+  tasks: SEED_STANDALONE,
+  goals: SEED_GOALS,
+  partners: SEED_PARTNERS,
+  streak: 4,
+  lastActiveDate: todayIso,
+  completionDates: [daysAgo(3), daysAgo(2), daysAgo(1), todayIso],
+};
+
+/* -------------------------------------------------------------------------
+   PRESERVED v1 seed data — Pacts + Messages.
+   Not surfaced in the UI today (Pacts/Circle tabs are placeholders) but
+   persisted to localStorage so the future tabs pick up real data.
+   ------------------------------------------------------------------------- */
 
 export const SEED_PACTS: Pact[] = [
   {

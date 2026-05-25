@@ -1,39 +1,59 @@
-export interface Todo {
+/* =========================================================================
+   v2 model — the active model the Home tab uses today.
+   ========================================================================= */
+
+export type Recurring = "daily" | "weekly" | null;
+
+export interface Task {
   id: string;
   text: string;
   done: boolean;
-  added: string;        // ISO date string
-  priority: boolean;
+  star: boolean;
   overdue: boolean;
-}
-
-export type GoalType = "daily" | "weekly" | "monthly" | "longterm";
-
-export interface GoalTask {
-  t: string;
-  done: boolean;
-  due?: string;
-}
-
-export interface Partner {
-  name: string;
-  ini: string;
-  col: string;
+  goalId: string | null;
+  partnerId: string | null;
+  due: number | null;        // day of month (1-31), null = no specific date
+  recurring: Recurring;
+  createdAt: string;          // ISO date string
+  completedAt?: string;       // ISO date string set when marked done
 }
 
 export interface Goal {
   id: string;
-  title: string;
   emoji: string;
-  type: GoalType;
-  deadline: string;
-  streak: number;
-  muted: boolean;
-  linkedTo: string | null;
-  partner: Partner | null;
-  today: GoalTask[];
-  allTasks: GoalTask[];
+  name: string;
+  color: string;              // hex for the gradient tile
+  deadline: string;           // human label e.g. "Oct 2026"
+  deadlineDate: string;       // ISO date for filtering
+  tasks: Task[];
 }
+
+export interface Partner {
+  id: string;
+  name: string;
+  initial: string;
+  color: string;
+}
+
+export interface UserData {
+  name: string;
+  tasks: Task[];              // standalone tasks (no goal)
+  goals: Goal[];
+  partners: Partner[];
+  streak: number;
+  lastActiveDate: string;     // ISO date of last completion
+  completionDates: string[];  // ISO dates with at least one completion
+}
+
+export type TabId = "home" | "pacts" | "circle" | "settings";
+export type GoalFilter = "all" | "short" | "long";
+
+/* =========================================================================
+   PRESERVED — Pact + Message data structures from the v1 model.
+   Not used by Home today, but kept (and persisted to localStorage) so the
+   future Pacts / Circle tab implementations can pick this back up without
+   losing seeded or user-generated data.
+   ========================================================================= */
 
 export interface PactMember {
   ini: string;
@@ -80,5 +100,3 @@ export interface Message {
   col?: string;
   name?: string;
 }
-
-export type TabId = "home" | "pacts" | "circle" | "profile";

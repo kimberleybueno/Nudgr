@@ -1,9 +1,8 @@
 export const STORAGE_KEYS = {
-  todos: "nudgr_todos",
-  goals: "nudgr_goals",
+  // v2 model (active — Home tab)
+  user: "nudgr_user",
+  onboarded: "nudgr_onboarded",
+  // v1 model (preserved — for future Pacts / Circle tabs)
   pacts: "nudgr_pacts",
   messages: "nudgr_messages",
-  userName: "nudgr_user_name",
-  onboarded: "nudgr_onboarded",
-  lastSeenPact: "nudgr_last_seen_pact",
 } as const;
