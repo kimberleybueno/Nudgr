@@ -19,11 +19,13 @@ interface Props {
   onDeleteTask: (id: string) => void;
   onToggleTask: (id: string) => void;
   onReorder: (sourceId: string, targetIndex: number) => void;
+  onCreateGoalAndLink?: (g: Goal, taskId: string) => void;
 }
 
 export default function TaskList({
   tasks, goals, partners, selectedDay, isToday, dayLabel,
   onAddStandalone, onUpdateTask, onDeleteTask, onToggleTask, onReorder,
+  onCreateGoalAndLink,
 }: Props) {
   const [input, setInput] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
@@ -116,6 +118,7 @@ export default function TaskList({
             onToggle={onToggleTask}
             onUpdate={onUpdateTask}
             onDelete={onDeleteTask}
+            onCreateGoalAndLink={onCreateGoalAndLink}
             onHoldStart={handleHoldStart}
             onHoldMove={handleHoldMove}
             onHoldEnd={handleHoldEnd}
@@ -124,10 +127,17 @@ export default function TaskList({
           />
         ))}
         {active.length === 0 && (
-          <div className="text-center py-8" style={{ color: C.muted }}>
-            <div className="text-3xl mb-2">📅</div>
-            <div className="text-[13px] font-semibold">No tasks for {dayLabel}</div>
-            <div className="text-[11px] mt-1">Add one or tap today to go back</div>
+          <div className="rounded-2xl px-5 py-7 text-center mt-1"
+               style={{ background: C.bg, border: `1px dashed ${C.faint}` }}>
+            <div className="text-3xl mb-2">✓</div>
+            <div className="text-[14px] font-bold mb-1" style={{ color: C.sageDark }}>
+              {isToday ? "No to-dos yet" : `No tasks for ${dayLabel}`}
+            </div>
+            <div className="text-[11px] max-w-[260px] mx-auto leading-relaxed" style={{ color: C.muted }}>
+              {isToday
+                ? "Add your first task above to start nudging yourself forward."
+                : "Add one above, or tap today to go back."}
+            </div>
           </div>
         )}
       </div>

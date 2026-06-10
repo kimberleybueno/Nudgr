@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { C } from "@/lib/colors";
 import type { Task, Goal, Partner } from "@/types";
+import InlineGoalForm from "./InlineGoalForm";
 
 interface Props {
   task: Task;
@@ -11,6 +12,8 @@ interface Props {
   onToggle: (id: string) => void;
   onUpdate: (t: Task) => void;
   onDelete: (id: string) => void;
+  /** Create a new goal AND link this task to it (inline mini-form path). */
+  onCreateGoalAndLink?: (g: Goal, taskId: string) => void;
   onHoldStart?: (id: string, startY: number) => void;
   onHoldMove?: (id: string, dy: number) => void;
   onHoldEnd?: (id: string) => void;
@@ -22,7 +25,7 @@ interface Props {
 
 export default function TaskRow({
   task, goals, partners,
-  onToggle, onUpdate, onDelete,
+  onToggle, onUpdate, onDelete, onCreateGoalAndLink,
   onHoldStart, onHoldMove, onHoldEnd,
   liftedDy = 0, isLifted = false,
 }: Props) {
@@ -250,7 +253,8 @@ export default function TaskRow({
           className="mt-1 ml-7 mr-2 rounded-xl p-1.5 anim-up"
           style={{ background: "#fff", border: `1px solid ${C.faint}` }}
         >
-          <DropdownGoal task={task} goals={goals} onUpdate={onUpdate} />
+          <DropdownGoal task={task} goals={goals} onUpdate={onUpdate}
+                        onCreateGoalAndLink={(g) => onCreateGoalAndLink?.(g, task.id)} />
           <DropdownPartner task={task} partners={partners} onUpdate={onUpdate} />
           <DropdownDue task={task} onUpdate={onUpdate} />
           <DropdownRecurring task={task} onUpdate={onUpdate} />
@@ -262,8 +266,15 @@ export default function TaskRow({
 
 /* ---------- Dropdown options ---------- */
 
-function DropdownGoal({ task, goals, onUpdate }: { task: Task; goals: Goal[]; onUpdate: (t: Task) => void }) {
+function DropdownGoal({
+  task, goals, onUpdate, onCreateGoalAndLink,
+}: {
+  task: Task; goals: Goal[];
+  onUpdate: (t: Task) => void;
+  onCreateGoalAndLink?: (g: Goal) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const [showInline, setShowInline] = useState(false);
   const cur = task.goalId ? goals.find((g) => g.id === task.goalId) ?? null : null;
   return (
     <div className="px-1">
@@ -273,7 +284,7 @@ function DropdownGoal({ task, goals, onUpdate }: { task: Task; goals: Goal[]; on
         <span>🎯 {cur ? `Move from ${cur.name}` : "Add to a goal"}</span>
         <span style={{ color: C.muted }}>{open ? "−" : "+"}</span>
       </button>
-      {open && (
+      {open && !showInline && (
         <div className="flex flex-wrap gap-1.5 pb-1.5">
           <Chip selected={!task.goalId} onClick={() => { onUpdate({ ...task, goalId: null }); setOpen(false); }}>None</Chip>
           {goals.map((g) => (
@@ -282,7 +293,26 @@ function DropdownGoal({ task, goals, onUpdate }: { task: Task; goals: Goal[]; on
               {g.emoji} {g.name}
             </Chip>
           ))}
+          {/* Inline 'New goal' chip — Screen 9 entry point 2 */}
+          {onCreateGoalAndLink && (
+            <button onClick={() => setShowInline(true)}
+                    className="px-2.5 h-7 rounded-md text-[11px] font-bold"
+                    style={{
+                      background: "transparent", color: C.warm,
+                      border: `1px dashed ${C.warm}`,
+                    }}>+ New goal</button>
+          )}
         </div>
+      )}
+      {open && showInline && onCreateGoalAndLink && (
+        <InlineGoalForm
+          onCancel={() => setShowInline(false)}
+          onCreate={(g) => {
+            onCreateGoalAndLink(g);
+            setShowInline(false);
+            setOpen(false);
+          }}
+        />
       )}
     </div>
   );

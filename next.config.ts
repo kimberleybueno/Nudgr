@@ -7,7 +7,13 @@ const withPWA = withPWAInit({
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
-  workboxOptions: { skipWaiting: true },
+  // Pattern B (Screen 11): NEW SW waits until user taps Refresh in UpdateBanner.
+  // The custom worker (worker/index.ts) handles the SKIP_WAITING message.
+  workboxOptions: {
+    skipWaiting: false,
+    clientsClaim: true,
+  },
+  customWorkerSrc: "worker",
   disable: process.env.NODE_ENV === "development",
 });
 

@@ -11,9 +11,10 @@ interface Props {
   onToggle: () => void;
   onAddTask: (text: string) => void;
   onToggleTask: (taskId: string) => void;
+  onEdit?: () => void;
 }
 
-export default function GoalTile({ goal, expanded, onToggle, onAddTask, onToggleTask }: Props) {
+export default function GoalTile({ goal, expanded, onToggle, onAddTask, onToggleTask, onEdit }: Props) {
   const [input, setInput] = useState("");
   const total = goal.tasks.length;
   const done = goal.tasks.filter((t) => t.done).length;
@@ -54,6 +55,11 @@ export default function GoalTile({ goal, expanded, onToggle, onAddTask, onToggle
               {done}/{total} task{total === 1 ? "" : "s"} · by {goal.deadline}
             </div>
           </div>
+          {onEdit && (
+            <button onClick={onEdit} aria-label="Edit goal"
+                    className="w-7 h-7 text-[14px] mr-1"
+                    style={{ color: "#fff", opacity: 0.75 }}>✎</button>
+          )}
           <button onClick={onToggle} aria-label="Collapse"
                   className="w-7 h-7 text-base"
                   style={{ color: "#fff", opacity: 0.85 }}>▴</button>

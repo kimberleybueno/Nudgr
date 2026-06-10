@@ -21,7 +21,33 @@ const isoForOffset = (offset: number) => {
 
 const id = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
 
-export const SEED_PARTNERS: Partner[] = [
+/* =========================================================================
+   EMPTY default — what every fresh install gets. No demo data leaks here.
+   Onboarding gate (Screen 1) writes name + primaryGoalTitle.
+   ========================================================================= */
+
+export const EMPTY_USER: UserData = {
+  name: "",
+  tasks: [],
+  goals: [],
+  partners: [],
+  streak: 0,
+  lastActiveDate: "",
+  completionDates: [],
+  onboardedAt: null,
+  primaryGoalTitle: null,
+  lastNudgedAt: {},
+};
+
+export const EMPTY_PACTS: Pact[] = [];
+export const EMPTY_MESSAGES: Message[] = [];
+
+/* =========================================================================
+   SAMPLE — populated via Settings → 'Load sample data'. Same shape as
+   the previous default, just gated behind an explicit user action.
+   ========================================================================= */
+
+export const SAMPLE_PARTNERS: Partner[] = [
   { id: "p_maya",   name: "Maya",   initial: "M", color: "#C4A98A" },
   { id: "p_jordan", name: "Jordan", initial: "J", color: "#7A9E7E" },
 ];
@@ -44,7 +70,7 @@ const marathonId = "g_marathon";
 const launchId   = "g_launch";
 const readId     = "g_read";
 
-export const SEED_GOALS: Goal[] = [
+export const SAMPLE_GOALS: Goal[] = [
   {
     id: marathonId,
     emoji: "🏃‍♀️",
@@ -85,29 +111,26 @@ export const SEED_GOALS: Goal[] = [
   },
 ];
 
-export const SEED_STANDALONE: Task[] = [
+export const SAMPLE_STANDALONE: Task[] = [
   t({ text: "Reply to Sara's email", star: true }),
   t({ text: "Buy oat milk", due: null }),
   t({ text: "Schedule dentist", due: null, createdAt: daysAgo(5), overdue: true }),
 ];
 
-export const SEED_USER: UserData = {
+export const SAMPLE_USER: UserData = {
   name: "friend",
-  tasks: SEED_STANDALONE,
-  goals: SEED_GOALS,
-  partners: SEED_PARTNERS,
+  tasks: SAMPLE_STANDALONE,
+  goals: SAMPLE_GOALS,
+  partners: SAMPLE_PARTNERS,
   streak: 4,
   lastActiveDate: todayIso,
   completionDates: [daysAgo(3), daysAgo(2), daysAgo(1), todayIso],
+  onboardedAt: today.toISOString(),
+  primaryGoalTitle: "Marathon Training",
+  lastNudgedAt: {},
 };
 
-/* -------------------------------------------------------------------------
-   PRESERVED v1 seed data — Pacts + Messages.
-   Not surfaced in the UI today (Pacts/Circle tabs are placeholders) but
-   persisted to localStorage so the future tabs pick up real data.
-   ------------------------------------------------------------------------- */
-
-export const SEED_PACTS: Pact[] = [
+export const SAMPLE_PACTS: Pact[] = [
   {
     id: "p1",
     name: "Run Club",
@@ -126,6 +149,9 @@ export const SEED_PACTS: Pact[] = [
       { title: "Run 5k weekly", emoji: "🏃‍♀️", progress: 75 },
       { title: "Sunday long run", emoji: "🌄", progress: 50 },
     ],
+    goal: "Stay consistent with weekly runs",
+    cadence: "weekly",
+    createdAt: daysAgo(20),
   },
   {
     id: "p2",
@@ -138,6 +164,9 @@ export const SEED_PACTS: Pact[] = [
     time: "Yesterday",
     pinned: false,
     sharedGoals: [{ title: "Launch beta", emoji: "🚀", progress: 35 }],
+    goal: "Ship Nudgr to beta",
+    cadence: "daily",
+    createdAt: daysAgo(7),
   },
   {
     id: "p3",
@@ -153,10 +182,13 @@ export const SEED_PACTS: Pact[] = [
     time: "2d",
     pinned: false,
     sharedGoals: [{ title: "Read 20 min daily", emoji: "📖", progress: 88 }],
+    goal: "Read 20 minutes a day",
+    cadence: "daily",
+    createdAt: daysAgo(40),
   },
 ];
 
-export const SEED_MESSAGES: Message[] = [
+export const SAMPLE_MESSAGES: Message[] = [
   { id: 1, pactId: "p1", user: "system", text: "Today", time: "", type: "date" },
   { id: 2, pactId: "p1", user: "Maya", ini: "M", col: "#C4A98A", name: "Maya", text: "Morning! Ready for the 5k?", time: "8:12", type: "msg", read: true },
   { id: 3, pactId: "p1", user: "me", text: "About to head out 🏃‍♀️", time: "8:14", type: "msg", read: true },

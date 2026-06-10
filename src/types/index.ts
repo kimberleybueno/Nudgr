@@ -43,6 +43,12 @@ export interface UserData {
   streak: number;
   lastActiveDate: string;     // ISO date of last completion
   completionDates: string[];  // ISO dates with at least one completion
+  /** Set on Onboarding completion. Falsy => the OnboardingGate intercepts. */
+  onboardedAt: string | null;
+  /** From the Onboarding step 2. */
+  primaryGoalTitle: string | null;
+  /** Map of personId -> ISO timestamp of last Nudge sent. Used for rate limiting. */
+  lastNudgedAt: Record<string, string>;
 }
 
 export type TabId = "home" | "people" | "settings";
@@ -67,6 +73,8 @@ export interface PactGoal {
   progress: number;
 }
 
+export type PactCadence = "daily" | "weekly" | "none";
+
 export interface Pact {
   id: string;
   name: string;
@@ -78,6 +86,12 @@ export interface Pact {
   time: string;
   pinned: boolean;
   sharedGoals: PactGoal[];
+  /** Optional goal text — what this Pact is working toward. */
+  goal?: string;
+  cadence?: PactCadence;
+  createdAt?: string;
+  /** True if user has dismissed the 'check-ins coming soon' banner for this Pact. */
+  checkInBannerDismissed?: boolean;
 }
 
 export type MessageType =

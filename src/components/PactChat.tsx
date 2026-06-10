@@ -11,20 +11,13 @@ interface Props {
   onBack: () => void;
   onSend: (text: string) => void;
   onPostSystem: (text: string) => void;
+  onDismissBanner: () => void;
   /** When true, render as a panel inside a desktop layout instead of a full-screen takeover. */
   embedded?: boolean;
 }
 
-const CHECKIN_RESPONSES = [
-  { label: "Doing amazing! 🔥", color: C.sage,    sysSuffix: "Doing amazing! 🔥" },
-  { label: "On track ✅",      color: C.sageDark, sysSuffix: "On track ✅" },
-  { label: "Missed today 😔",  color: C.warm,     sysSuffix: "Missed today 😔" },
-  { label: "Need a nudge 😬",  color: C.urgent,   sysSuffix: "Need a nudge 😬" },
-];
-
-export default function PactChat({ pact, messages, userName, onBack, onSend, onPostSystem, embedded = false }: Props) {
+export default function PactChat({ pact, messages, userName, onBack, onSend, onPostSystem, onDismissBanner, embedded = false }: Props) {
   const [text, setText] = useState("");
-  const [responded, setResponded] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,9 +31,8 @@ export default function PactChat({ pact, messages, userName, onBack, onSend, onP
     setText("");
   };
 
-  const respondCheckin = (suffix: string) => {
-    onPostSystem(`${userName} checked in: ${suffix}`);
-    setResponded(true);
+  const sendGroupNudge = () => {
+    onPostSystem(`${userName || "You"} nudged the group 👋`);
   };
 
   return (
@@ -99,33 +91,21 @@ export default function PactChat({ pact, messages, userName, onBack, onSend, onP
           </div>
         )}
 
-        {/* Demo check-in card */}
-        <div
-          className="mt-2 rounded-2xl p-4 text-center"
-          style={{ background: "#fff", border: `1.5px solid ${C.sage}33` }}
-        >
-          <div className="text-[13px] font-bold" style={{ color: C.sageDark }}>📋 Check-in time!</div>
-          <div className="text-[11px] mt-0.5 mb-2.5" style={{ color: C.muted }}>How&apos;s everyone doing today?</div>
-          <div className="flex flex-col gap-1.5">
-            {CHECKIN_RESPONSES.map((r) => (
-              <button
-                key={r.label}
-                disabled={responded}
-                onClick={() => respondCheckin(r.sysSuffix)}
-                className="py-2 rounded-xl text-[12px] font-semibold"
-                style={{
-                  background: responded ? C.bg : r.color + "13",
-                  color: responded ? C.muted : r.color,
-                  border: `1px solid ${responded ? C.faint : r.color + "30"}`,
-                  opacity: responded ? 0.5 : 1,
-                }}
-              >{r.label}</button>
-            ))}
+        {/* Honest 'check-ins coming soon' banner — dismissible per Pact (Screen 6) */}
+        {!pact.checkInBannerDismissed && (
+          <div
+            className="mt-2 flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
+            style={{ background: C.warm + "1a", border: `1px solid ${C.warm}33` }}
+          >
+            <span className="text-[15px] shrink-0" style={{ color: C.sage }}>🔔</span>
+            <span className="text-[11px] leading-snug flex-1" style={{ color: C.charcoal }}>
+              Daily check-ins are coming soon. For now, send a message to keep your Pact moving.
+            </span>
+            <button onClick={onDismissBanner} aria-label="Dismiss"
+                    className="text-[14px] w-6 h-6 flex items-center justify-center shrink-0"
+                    style={{ color: C.muted }}>×</button>
           </div>
-          {responded && (
-            <div className="text-[10px] mt-2" style={{ color: C.muted }}>Posted to chat ✓</div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Composer */}
@@ -137,6 +117,12 @@ export default function PactChat({ pact, messages, userName, onBack, onSend, onP
           paddingBottom: embedded ? 12 : 32,
         }}
       >
+        <button
+          onClick={sendGroupNudge}
+          title="Nudge the group"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-[14px] shrink-0"
+          style={{ background: C.sage + "1f", color: C.sage }}
+        >👋</button>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -148,7 +134,7 @@ export default function PactChat({ pact, messages, userName, onBack, onSend, onP
         <button
           onClick={send}
           aria-label="Send"
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-[14px]"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-[14px] shrink-0"
           style={{ background: `linear-gradient(135deg, ${C.sageDark}, ${C.sage})` }}
         >↑</button>
       </div>

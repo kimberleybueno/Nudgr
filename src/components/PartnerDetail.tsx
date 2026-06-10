@@ -20,18 +20,23 @@ interface Props {
   onBack: () => void;
   onNudge: () => void;
   onMessage: () => void;
+  /** Disables Nudge button when the 60-min rate limit window hasn't elapsed. */
+  canNudge?: boolean;
   /** When true, render as a panel inside a desktop layout instead of a full-screen takeover. */
   embedded?: boolean;
 }
 
-export default function PartnerDetail({ person, onBack, onNudge, onMessage, embedded = false }: Props) {
-  const [nudged, setNudged] = useState(false);
+export default function PartnerDetail({ person, onBack, onNudge, onMessage, canNudge = true, embedded = false }: Props) {
+  const [justSent, setJustSent] = useState(false);
 
   const handleNudge = () => {
+    if (!canNudge) return;
     onNudge();
-    setNudged(true);
-    setTimeout(() => setNudged(false), 5000);
+    setJustSent(true);
+    setTimeout(() => setJustSent(false), 5000);
   };
+
+  const disabled = !canNudge || justSent;
 
   return (
     <div
@@ -117,10 +122,12 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, embe
         <div className="flex gap-2 mt-6">
           <button
             onClick={handleNudge}
-            disabled={nudged}
+            disabled={disabled}
             className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold text-white"
-            style={{ background: nudged ? C.muted : C.sage, opacity: nudged ? 0.6 : 1 }}
-          >{nudged ? "Sent ✓" : "👋 Send Nudge"}</button>
+            style={{ background: disabled ? C.muted : C.sage, opacity: disabled ? 0.6 : 1 }}
+          >
+            {justSent ? "Sent ✓" : !canNudge ? "Nudged recently" : "👋 Send Nudge"}
+          </button>
           <button
             onClick={onMessage}
             className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold"

@@ -11,6 +11,7 @@ import Calendar from "./Calendar";
 import TaskList from "./TaskList";
 import GoalGrid from "./GoalGrid";
 import Confetti, { type ConfettiTier } from "./Confetti";
+import CreateGoalModal from "./CreateGoalModal";
 
 interface Props {
   user: UserData;
@@ -30,6 +31,7 @@ const dayLabel = (day: number) => {
 export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
   const [selectedDay, setSelectedDay] = useState<number>(() => todayDayOfMonth());
   const [confetti, setConfetti] = useState<ConfettiTier | null>(null);
+  const [goalModal, setGoalModal] = useState<{ mode: "create" } | { mode: "edit"; goal: Goal } | null>(null);
 
   // Recompute overdue flags on every mount
   useEffect(() => {
@@ -201,6 +203,44 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
   const updateTask = (t: Task) => setTaskInUser(t.id, () => t);
   const deleteTask = (id: string) => removeTaskFromUser(id);
 
+  /* ---------- Goal CRUD ---------- */
+
+  const upsertGoal = (g: Goal) => {
+    setUser((u) => {
+      const exists = u.goals.some((x) => x.id === g.id);
+      return {
+        ...u,
+        goals: exists ? u.goals.map((x) => (x.id === g.id ? { ...g, tasks: x.tasks } : x)) : [g, ...u.goals],
+      };
+    });
+    setGoalModal(null);
+  };
+
+  const deleteGoal = (goalId: string) => {
+    setUser((u) => {
+      // Unlink any tasks pointing at this goal (standalone tasks AND tasks inside other goals)
+      const goalToRemove = u.goals.find((g) => g.id === goalId);
+      const orphanedTasks: Task[] = (goalToRemove?.tasks ?? []).map((t) => ({ ...t, goalId: null }));
+      return {
+        ...u,
+        tasks: [...u.tasks.map((t) => (t.goalId === goalId ? { ...t, goalId: null } : t)), ...orphanedTasks],
+        goals: u.goals.filter((g) => g.id !== goalId),
+      };
+    });
+    setGoalModal(null);
+  };
+
+  /** Inline goal creation from inside a task expansion: create the goal AND link the task. */
+  const createGoalAndLink = (g: Goal, taskId: string) => {
+    setUser((u) => ({
+      ...u,
+      goals: [g, ...u.goals],
+      tasks: u.tasks.map((t) => (t.id === taskId ? { ...t, goalId: g.id } : t)),
+      // also handle if the task is inside another goal's tasks array
+      // (we move it out of standalone but DON'T move it between goals; spec implies updating goalId is sufficient)
+    }));
+  };
+
   const reorderTask = (sourceId: string, _targetIndex: number) => {
     // Move source to targetIndex within the standalone tasks array (goal tasks reorder within their own goal)
     setUser((u) => {
@@ -253,6 +293,7 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       onDeleteTask={deleteTask}
       onToggleTask={toggleTask}
       onReorder={reorderTask}
+      onCreateGoalAndLink={createGoalAndLink}
     />
   );
 
@@ -261,6 +302,8 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       goals={user.goals}
       onAddTaskToGoal={addTaskToGoal}
       onToggleTaskInGoal={(_goalId, taskId) => toggleTask(taskId)}
+      onCreateGoal={() => setGoalModal({ mode: "create" })}
+      onEditGoal={(g) => setGoalModal({ mode: "edit", goal: g })}
     />
   );
 
@@ -279,6 +322,14 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
           </div>
         </div>
         <Confetti tier={confetti} onDone={() => setConfetti(null)} />
+        {goalModal && (
+          <CreateGoalModal
+            goal={goalModal.mode === "edit" ? goalModal.goal : undefined}
+            onCancel={() => setGoalModal(null)}
+            onSave={upsertGoal}
+            onDelete={goalModal.mode === "edit" ? deleteGoal : undefined}
+          />
+        )}
       </div>
     );
   }
@@ -291,6 +342,14 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       {taskList}
       {goalGrid}
       <Confetti tier={confetti} onDone={() => setConfetti(null)} />
+      {goalModal && (
+        <CreateGoalModal
+          goal={goalModal.mode === "edit" ? goalModal.goal : undefined}
+          onCancel={() => setGoalModal(null)}
+          onSave={upsertGoal}
+          onDelete={goalModal.mode === "edit" ? deleteGoal : undefined}
+        />
+      )}
     </div>
   );
 }
