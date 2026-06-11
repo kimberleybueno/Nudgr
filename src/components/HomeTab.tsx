@@ -12,6 +12,7 @@ import WeekStrip from "./WeekStrip";
 import VoicePromo from "./VoicePromo";
 import TaskList from "./TaskList";
 import GoalGrid from "./GoalGrid";
+import GoalDetail from "./GoalDetail";
 import Confetti, { type ConfettiTier } from "./Confetti";
 import CreateGoalModal from "./CreateGoalModal";
 
@@ -27,6 +28,8 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
   const [selectedDate, setSelectedDate] = useState<string>(() => nowIso());
   const [confetti, setConfetti] = useState<ConfettiTier | null>(null);
   const [goalModal, setGoalModal] = useState<{ mode: "create" } | { mode: "edit"; goal: Goal } | null>(null);
+  /** When set, replace the home view with the Goal detail screen (sec 7). */
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
 
   // Recompute overdue flags on every mount
   useEffect(() => {
@@ -206,6 +209,7 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       };
     });
     setGoalModal(null);
+    if (detailGoalId === goalId) setDetailGoalId(null);
   };
 
   /** Inline goal creation from inside a task expansion: create the goal AND link the task. */
@@ -281,9 +285,39 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       onAddTaskToGoal={addTaskToGoal}
       onToggleTaskInGoal={(_goalId, taskId) => toggleTask(taskId)}
       onCreateGoal={() => setGoalModal({ mode: "create" })}
+      onOpenGoal={(g) => setDetailGoalId(g.id)}
       onEditGoal={(g) => setGoalModal({ mode: "edit", goal: g })}
     />
   );
+
+  /* ---------- Goal detail (sec 7): full-screen takeover when set ---------- */
+  const detailGoal = detailGoalId ? user.goals.find((g) => g.id === detailGoalId) ?? null : null;
+  if (detailGoal) {
+    return (
+      <div className="anim-up">
+        <GoalDetail
+          goal={detailGoal}
+          partners={user.partners}
+          onBack={() => setDetailGoalId(null)}
+          onAddTask={(text) => addTaskToGoal(detailGoal.id, text)}
+          onToggleTask={(taskId) => toggleTask(taskId)}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
+          onEdit={() => setGoalModal({ mode: "edit", goal: detailGoal })}
+          isDesktop={isDesktop}
+        />
+        <Confetti tier={confetti} onDone={() => setConfetti(null)} />
+        {goalModal && (
+          <CreateGoalModal
+            goal={goalModal.mode === "edit" ? goalModal.goal : undefined}
+            onCancel={() => setGoalModal(null)}
+            onSave={upsertGoal}
+            onDelete={goalModal.mode === "edit" ? deleteGoal : undefined}
+          />
+        )}
+      </div>
+    );
+  }
 
   /* ---------- Desktop: 2-column body under the greeting + week strip ---------- */
   if (isDesktop) {

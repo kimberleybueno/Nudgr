@@ -32,6 +32,12 @@ export interface Goal {
   deadline: string;           // human label e.g. "Oct 2026"
   deadlineDate: string;       // ISO date for filtering
   tasks: Task[];
+  /**
+   * Optional "why" statement that powers the WHY card in Goal detail
+   * (handoff sec 7). One short sentence, surfaced as Fraunces italic on
+   * a tan-tint background. Absent goals simply omit the card.
+   */
+  why?: string;
 }
 
 export interface Partner {

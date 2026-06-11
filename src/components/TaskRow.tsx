@@ -24,6 +24,11 @@ interface Props {
   liftedDy?: number;
   isLifted?: boolean;
   isDesktop?: boolean;
+  /**
+   * Hide the "Add to a goal" row from the expanded options panel. Used by
+   * Goal detail (sec 7) since you're already inside a goal there.
+   */
+  hideGoalRow?: boolean;
 }
 
 type PickerName = "goal" | "partner" | "date" | null;
@@ -43,7 +48,7 @@ export default function TaskRow({
   task, goals, partners,
   onToggle, onUpdate, onDelete, onCreateGoalAndLink,
   onHoldStart, onHoldMove, onHoldEnd,
-  liftedDy = 0, isLifted = false, isDesktop = false,
+  liftedDy = 0, isLifted = false, isDesktop = false, hideGoalRow = false,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [pop, setPop] = useState(false);
@@ -249,12 +254,14 @@ export default function TaskRow({
               padding: "4px 8px 8px",
             }}
           >
-            <PickerRow
-              icon={<TargetIcon />}
-              label="Add to a goal"
-              value={linkedGoal ? <GoalChip name={linkedGoal.name} /> : null}
-              onClick={() => setPicker("goal")}
-            />
+            {!hideGoalRow && (
+              <PickerRow
+                icon={<TargetIcon />}
+                label="Add to a goal"
+                value={linkedGoal ? <GoalChip name={linkedGoal.name} /> : null}
+                onClick={() => setPicker("goal")}
+              />
+            )}
             <PickerRow
               icon={<PeopleIcon />}
               label="Assign partner"

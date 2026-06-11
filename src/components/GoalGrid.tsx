@@ -10,6 +10,9 @@ interface Props {
   onAddTaskToGoal: (goalId: string, text: string) => void;
   onToggleTaskInGoal: (goalId: string, taskId: string) => void;
   onCreateGoal: () => void;
+  /** Tap a card body opens the Goal detail screen. */
+  onOpenGoal: (goal: Goal) => void;
+  /** Edit comes from inside Goal detail; still wired here for the modal. */
   onEditGoal: (goal: Goal) => void;
 }
 
@@ -20,7 +23,7 @@ const FILTERS: { id: GoalFilter; label: string }[] = [
 ];
 
 export default function GoalGrid({
-  goals, onAddTaskToGoal, onToggleTaskInGoal, onCreateGoal, onEditGoal,
+  goals, onAddTaskToGoal, onToggleTaskInGoal, onCreateGoal, onOpenGoal,
 }: Props) {
   const [filter, setFilter] = useState<GoalFilter>("all");
 
@@ -100,7 +103,7 @@ export default function GoalGrid({
               goal={g}
               onAddTask={(text) => onAddTaskToGoal(g.id, text)}
               onToggleTask={(taskId) => onToggleTaskInGoal(g.id, taskId)}
-              onEdit={() => onEditGoal(g)}
+              onOpen={() => onOpenGoal(g)}
             />
           ))}
           {visible.length === 0 && (

@@ -8,7 +8,8 @@ interface Props {
   goal: Goal;
   onAddTask: (text: string) => void;
   onToggleTask: (taskId: string) => void;
-  onEdit?: () => void;
+  /** Whole-card tap target: opens Goal detail (sec 5: "Whole card taps into Goal detail"). */
+  onOpen?: () => void;
 }
 
 /**
@@ -24,7 +25,7 @@ interface Props {
  *
  * House rules: no emoji, no em dashes.
  */
-export default function GoalTile({ goal, onAddTask, onToggleTask, onEdit }: Props) {
+export default function GoalTile({ goal, onAddTask, onToggleTask, onOpen }: Props) {
   const [input, setInput] = useState("");
 
   const total = goal.tasks.length;
@@ -60,12 +61,12 @@ export default function GoalTile({ goal, onAddTask, onToggleTask, onEdit }: Prop
         gap: 12,
       }}
     >
-      {/* Header */}
+      {/* Header — tap opens Goal detail */}
       <button
         type="button"
-        onClick={onEdit}
+        onClick={onOpen}
         className="text-left"
-        aria-label={`Edit ${goal.name}`}
+        aria-label={`Open ${goal.name}`}
         style={{ display: "flex", alignItems: "flex-start", gap: 10 }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
