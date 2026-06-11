@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { C } from "@/lib/colors";
-import type { Task, Goal, Partner } from "@/types";
+import { N } from "@/lib/colors";
+import type { Task, Goal, Partner, Recurring } from "@/types";
 import InlineGoalForm from "./InlineGoalForm";
 
 interface Props {
@@ -17,50 +17,54 @@ interface Props {
   onHoldStart?: (id: string, startY: number) => void;
   onHoldMove?: (id: string, dy: number) => void;
   onHoldEnd?: (id: string) => void;
-  /** Vertical offset applied while reordering (parent-controlled) */
   liftedDy?: number;
-  /** True while this row is the one being dragged */
   isLifted?: boolean;
 }
 
+/**
+ * Expandable task row, per design_handoff_nudgr_app/README.md sec 6.
+ *
+ * Collapsed: 24px rounded checkbox tile, ink text, tan star, chevron.
+ * Tap text or chevron to expand to the options panel (hairline + four
+ * icon-tile rows: Add to a goal, Assign partner, Due day, Recurring).
+ *
+ * House rules from the kit (enforced here):
+ *   - No em dashes in code or copy.
+ *   - No emoji on the row.
+ */
 export default function TaskRow({
   task, goals, partners,
   onToggle, onUpdate, onDelete, onCreateGoalAndLink,
   onHoldStart, onHoldMove, onHoldEnd,
   liftedDy = 0, isLifted = false,
 }: Props) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(task.text);
   const [expanded, setExpanded] = useState(false);
+  const [pop, setPop] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const [deleteArmed, setDeleteArmed] = useState(false);
+  const [showInlineGoal, setShowInlineGoal] = useState(false);
 
-  const rowRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const swiping = useRef(false);
   const holding = useRef(false);
 
-  // Sync draft when task text changes externally
-  useEffect(() => { setDraft(task.text); }, [task.text]);
+  // Pop animation when transitioning from undone to done.
+  const prevDone = useRef(task.done);
+  useEffect(() => {
+    if (task.done && !prevDone.current) {
+      setPop(true);
+      const t = setTimeout(() => setPop(false), 260);
+      return () => clearTimeout(t);
+    }
+    prevDone.current = task.done;
+  }, [task.done]);
 
-  // Auto-focus input when entering edit mode
-  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
-
-  const goal = task.goalId ? goals.find((g) => g.id === task.goalId) ?? null : null;
+  const linkedGoal = task.goalId ? goals.find((g) => g.id === task.goalId) ?? null : null;
   const partner = task.partnerId ? partners.find((p) => p.id === task.partnerId) ?? null : null;
 
-  const commitEdit = () => {
-    setEditing(false);
-    const v = draft.trim();
-    if (v && v !== task.text) onUpdate({ ...task, text: v });
-    else setDraft(task.text);
-  };
-
-  // ----- Pointer handlers (covers touch + mouse for hold + swipe) -----
+  /* -------- Pointer (hold-to-reorder, swipe-to-delete) -------- */
   const onPointerDown = (e: React.PointerEvent) => {
-    if (editing) return;
     if ((e.target as HTMLElement).closest("[data-no-drag]")) return;
     swipeStart.current = { x: e.clientX, y: e.clientY };
     swiping.current = false;
@@ -85,31 +89,24 @@ export default function TaskRow({
       onHoldMove?.(task.id, dy);
       return;
     }
-
-    // Detect swipe direction once: horizontal beats vertical
     if (!swiping.current && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
       swiping.current = true;
       if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
     }
-
     if (swiping.current) {
-      const next = Math.max(-90, Math.min(0, dx));
-      setSwipeX(next);
+      setSwipeX(Math.max(-90, Math.min(0, dx)));
     }
   };
 
   const onPointerUp = () => {
     if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
-
     if (holding.current) {
       holding.current = false;
       onHoldEnd?.(task.id);
     } else if (swiping.current) {
-      // Snap to either revealed (-75) or closed (0)
       setSwipeX(swipeX < -40 ? -75 : 0);
       if (swipeX > -40) setDeleteArmed(false);
     }
-
     swipeStart.current = null;
     swiping.current = false;
   };
@@ -123,194 +120,223 @@ export default function TaskRow({
     }
   };
 
-  const overdue = task.overdue && !task.done;
+  const setRecurring = (r: Recurring) => onUpdate({ ...task, recurring: r });
+  const setDue = (n: number | null) => onUpdate({ ...task, due: n });
+  const setGoal = (id: string | null) => onUpdate({ ...task, goalId: id });
+  const setPartner = (id: string | null) => onUpdate({ ...task, partnerId: id });
 
   return (
-    <div
-      className="relative"
-      style={{
-        zIndex: isLifted ? 20 : "auto",
-      }}
-    >
-      {/* Delete reveal zone behind the row */}
+    <div className="relative" style={{ zIndex: isLifted ? 20 : "auto" }}>
+      {/* Delete reveal behind the row */}
       <div
         className="absolute inset-y-0 right-0 flex items-center justify-end pr-2"
-        style={{ width: 90, background: C.urgent, borderRadius: 10, overflow: "hidden" }}
+        style={{ width: 90, background: "#A8483A", borderRadius: 14, overflow: "hidden" }}
       >
         <button
           onClick={handleDeleteTap}
           className="h-9 px-3 rounded-md text-[11px] font-bold text-white"
-          style={{ background: deleteArmed ? "rgba(0,0,0,0.25)" : "transparent" }}
-        >{deleteArmed ? "Tap to confirm" : "Delete"}</button>
+          style={{ background: deleteArmed ? "rgba(0, 0, 0, 0.25)" : "transparent" }}
+        >
+          {deleteArmed ? "Tap to confirm" : "Delete"}
+        </button>
       </div>
 
       <div
-        ref={rowRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className="flex items-center gap-2.5 px-3.5 py-2.5 select-none touch-pan-y"
+        className="select-none touch-pan-y relative"
         style={{
-          background: "#fff",
-          borderRadius: 10,
-          borderLeft: overdue ? `3px solid ${C.urgent}` : `3px solid transparent`,
-          border: overdue ? `1px solid ${C.urgent}33` : `1px solid ${C.faint}`,
-          borderLeftWidth: 3,
-          borderLeftColor: overdue ? C.urgent : "transparent",
+          background: N.creamCard,
+          borderRadius: 14,
+          border: `1px solid ${expanded ? N.lineStrong : N.line}`,
+          boxShadow: isLifted ? "0 6px 18px rgba(0, 0, 0, 0.12)" : N.shadowSoft,
           transform: `translate(${swipeX}px, ${isLifted ? liftedDy : 0}px) scale(${isLifted ? 1.02 : 1})`,
-          boxShadow: isLifted ? "0 6px 18px rgba(0,0,0,0.12)" : "none",
-          transition: isLifted || swipeStart.current ? "none" : "transform 0.2s ease, box-shadow 0.2s ease",
+          transition: isLifted || swipeStart.current ? "none" : "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.18s ease",
         }}
       >
-        {/* Drag handle */}
-        <div className="flex flex-col gap-0.5 shrink-0" style={{ opacity: isLifted ? 0.5 : 0.1 }}>
-          <div style={{ width: 8, height: 1.5, background: C.muted, borderRadius: 1 }} />
-          <div style={{ width: 8, height: 1.5, background: C.muted, borderRadius: 1 }} />
+        {/* -------- Collapsed row -------- */}
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          {/* Checkbox tile (24px rounded) */}
+          <button
+            data-no-drag
+            onClick={() => onToggle(task.id)}
+            aria-label={task.done ? "Mark incomplete" : "Mark complete"}
+            className="shrink-0 flex items-center justify-center"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 8,
+              background: task.done ? N.sageTint22 : N.sageTint08,
+              border: `1px solid ${task.done ? "transparent" : N.line}`,
+              transform: pop ? "scale(1.18)" : "scale(1)",
+              transition: "transform 0.18s cubic-bezier(0.3, 1.5, 0.6, 1), background 0.15s ease",
+            }}
+          >
+            {task.done && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M5 13l4 4L19 7"
+                  stroke={N.sageDeep}
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </button>
+
+          {/* Text: tap to expand */}
+          <button
+            data-no-drag
+            onClick={() => setExpanded((v) => !v)}
+            className="flex-1 min-w-0 text-left"
+            style={{
+              fontSize: 14.5,
+              fontWeight: 500,
+              color: task.done ? N.inkFaint : N.ink,
+              textDecoration: task.done ? "line-through" : "none",
+              transition: "color 0.15s ease",
+            }}
+          >
+            <span className="block truncate">{task.text}</span>
+          </button>
+
+          {/* Star */}
+          <button
+            data-no-drag
+            onClick={() => onUpdate({ ...task, star: !task.star })}
+            aria-label={task.star ? "Unstar" : "Star"}
+            className="shrink-0 flex items-center justify-center"
+            style={{ width: 32, height: 32 }}
+          >
+            <StarIcon filled={task.star} />
+          </button>
+
+          {/* Chevron */}
+          <button
+            data-no-drag
+            onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? "Collapse" : "Expand"}
+            aria-expanded={expanded}
+            className="shrink-0 flex items-center justify-center"
+            style={{
+              width: 32,
+              height: 32,
+              transform: `rotate(${expanded ? 180 : 0}deg)`,
+              transition: "transform 0.22s ease",
+            }}
+          >
+            <ChevronIcon />
+          </button>
         </div>
 
-        {/* Checkbox */}
-        <button
-          data-no-drag
-          onClick={() => onToggle(task.id)}
-          aria-label={task.done ? "Mark incomplete" : "Mark complete"}
-          className="w-[18px] h-[18px] rounded-full shrink-0 flex items-center justify-center"
-          style={{
-            border: `1.5px solid ${overdue ? C.urgent : task.done ? C.sage : C.faint}`,
-            background: task.done ? C.sage : "transparent",
-          }}
-        >
-          {task.done && <span className="text-white text-[10px] leading-none">✓</span>}
-        </button>
+        {/* -------- Expanded options panel -------- */}
+        {expanded && (
+          <div
+            className="anim-up"
+            style={{
+              borderTop: `1px solid ${N.line}`,
+              padding: "8px 12px 12px",
+            }}
+          >
+            {/* Add to a goal */}
+            <OptionRow icon={<TargetIcon />} label="Add to a goal">
+              <ChipStrip>
+                <Chip
+                  selected={!task.goalId}
+                  onClick={() => setGoal(null)}
+                  variant="ghost"
+                >
+                  None
+                </Chip>
+                {goals.map((g) => (
+                  <Chip
+                    key={g.id}
+                    selected={task.goalId === g.id}
+                    onClick={() => setGoal(g.id)}
+                  >
+                    {g.name}
+                  </Chip>
+                ))}
+                <Chip
+                  selected={false}
+                  onClick={() => setShowInlineGoal(true)}
+                  variant="outline"
+                >
+                  + New goal
+                </Chip>
+              </ChipStrip>
+              <Trailing>
+                {linkedGoal ? <GoalChip name={linkedGoal.name} /> : <PlusGlyph />}
+              </Trailing>
+            </OptionRow>
 
-        {/* Text + inline edit + goal emoji + warning */}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5">
-          {editing ? (
-            <input
-              ref={inputRef}
-              data-no-drag
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={commitEdit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitEdit();
-                if (e.key === "Escape") { setDraft(task.text); setEditing(false); }
-              }}
-              className="text-[13px] font-medium bg-transparent outline-none w-full"
-              style={{ borderBottom: `1px solid ${C.sage}`, color: C.charcoal }}
-            />
-          ) : (
-            <span
-              data-no-drag
-              onClick={() => !task.done && setEditing(true)}
-              className="text-[13px] font-medium truncate cursor-text"
-              style={{
-                color: task.done ? C.muted : C.charcoal,
-                textDecoration: task.done ? "line-through" : "none",
-                opacity: task.done ? 0.4 : 1,
-              }}
-            >{task.text}</span>
-          )}
-          {goal && !editing && (
-            <span className="text-[9px] shrink-0" style={{ opacity: 0.5 }}>{goal.emoji}</span>
-          )}
-          {partner && !editing && (
-            <span
-              className="text-[9px] font-bold flex items-center justify-center text-white shrink-0"
-              style={{ background: partner.color, width: 14, height: 14, borderRadius: "50%", fontSize: 8 }}
-            >{partner.initial}</span>
-          )}
-          {overdue && !editing && <span className="text-[10px] shrink-0">⚠️</span>}
-        </div>
+            {/* Assign partner */}
+            <OptionRow icon={<PeopleIcon />} label="Assign partner">
+              <ChipStrip>
+                <Chip
+                  selected={!task.partnerId}
+                  onClick={() => setPartner(null)}
+                  variant="ghost"
+                >
+                  None
+                </Chip>
+                {partners.map((p) => (
+                  <Chip
+                    key={p.id}
+                    selected={task.partnerId === p.id}
+                    onClick={() => setPartner(p.id)}
+                  >
+                    <Avatar p={p} size={16} />
+                    <span style={{ marginLeft: 6 }}>{p.name}</span>
+                  </Chip>
+                ))}
+              </ChipStrip>
+              <Trailing>
+                {partner ? <PartnerChip p={partner} /> : <PlusGlyph />}
+              </Trailing>
+            </OptionRow>
 
-        {/* Star */}
-        <button
-          data-no-drag
-          onClick={() => onUpdate({ ...task, star: !task.star })}
-          aria-label={task.star ? "Unstar" : "Star"}
-          className="text-[12px] shrink-0"
-          style={{ opacity: task.star ? 1 : 0.12, color: C.gold }}
-        >★</button>
+            {/* Due day */}
+            <OptionRow icon={<CalendarIcon />} label="Due day">
+              <ChipStrip>
+                <Chip selected={task.due == null} onClick={() => setDue(null)} variant="ghost">
+                  None
+                </Chip>
+                {dueOffsets().map((opt) => (
+                  <Chip
+                    key={opt.day}
+                    selected={task.due === opt.day}
+                    onClick={() => setDue(opt.day)}
+                  >
+                    {opt.label}
+                  </Chip>
+                ))}
+              </ChipStrip>
+              <Trailing>
+                {task.due != null ? <DueChip day={task.due} /> : <PlusGlyph />}
+              </Trailing>
+            </OptionRow>
 
-        {/* Chevron */}
-        <button
-          data-no-drag
-          onClick={() => setExpanded((v) => !v)}
-          aria-label="More options"
-          className="text-[10px] shrink-0"
-          style={{
-            color: C.muted,
-            opacity: 0.45,
-            transform: `rotate(${expanded ? 180 : 0}deg)`,
-            transition: "transform 0.2s",
-          }}
-        >▾</button>
+            {/* Recurring */}
+            <OptionRow icon={<RefreshIcon />} label="Recurring" hideTrailing>
+              <Segmented
+                value={task.recurring ?? "Off"}
+                onChange={(v) => setRecurring(v === "Off" ? null : (v.toLowerCase() as Recurring))}
+              />
+            </OptionRow>
+          </div>
+        )}
       </div>
 
-      {/* Expanded options */}
-      {expanded && (
-        <div
-          className="mt-1 ml-7 mr-2 rounded-xl p-1.5 anim-up"
-          style={{ background: "#fff", border: `1px solid ${C.faint}` }}
-        >
-          <DropdownGoal task={task} goals={goals} onUpdate={onUpdate}
-                        onCreateGoalAndLink={(g) => onCreateGoalAndLink?.(g, task.id)} />
-          <DropdownPartner task={task} partners={partners} onUpdate={onUpdate} />
-          <DropdownDue task={task} onUpdate={onUpdate} />
-          <DropdownRecurring task={task} onUpdate={onUpdate} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ---------- Dropdown options ---------- */
-
-function DropdownGoal({
-  task, goals, onUpdate, onCreateGoalAndLink,
-}: {
-  task: Task; goals: Goal[];
-  onUpdate: (t: Task) => void;
-  onCreateGoalAndLink?: (g: Goal) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [showInline, setShowInline] = useState(false);
-  const cur = task.goalId ? goals.find((g) => g.id === task.goalId) ?? null : null;
-  return (
-    <div className="px-1">
-      <button onClick={() => setOpen((v) => !v)}
-              className="w-full flex items-center justify-between py-2 text-[11px] font-semibold"
-              style={{ color: C.charcoal }}>
-        <span>🎯 {cur ? `Move from ${cur.name}` : "Add to a goal"}</span>
-        <span style={{ color: C.muted }}>{open ? "−" : "+"}</span>
-      </button>
-      {open && !showInline && (
-        <div className="flex flex-wrap gap-1.5 pb-1.5">
-          <Chip selected={!task.goalId} onClick={() => { onUpdate({ ...task, goalId: null }); setOpen(false); }}>None</Chip>
-          {goals.map((g) => (
-            <Chip key={g.id} selected={task.goalId === g.id}
-                  onClick={() => { onUpdate({ ...task, goalId: g.id }); setOpen(false); }}>
-              {g.emoji} {g.name}
-            </Chip>
-          ))}
-          {/* Inline 'New goal' chip — Screen 9 entry point 2 */}
-          {onCreateGoalAndLink && (
-            <button onClick={() => setShowInline(true)}
-                    className="px-2.5 h-7 rounded-md text-[11px] font-bold"
-                    style={{
-                      background: "transparent", color: C.warm,
-                      border: `1px dashed ${C.warm}`,
-                    }}>+ New goal</button>
-          )}
-        </div>
-      )}
-      {open && showInline && onCreateGoalAndLink && (
+      {showInlineGoal && (
         <InlineGoalForm
-          onCancel={() => setShowInline(false)}
+          onCancel={() => setShowInlineGoal(false)}
           onCreate={(g) => {
-            onCreateGoalAndLink(g);
-            setShowInline(false);
-            setOpen(false);
+            onCreateGoalAndLink?.(g, task.id);
+            setShowInlineGoal(false);
           }}
         />
       )}
@@ -318,86 +344,338 @@ function DropdownGoal({
   );
 }
 
-function DropdownPartner({ task, partners, onUpdate }: { task: Task; partners: Partner[]; onUpdate: (t: Task) => void }) {
-  const [open, setOpen] = useState(false);
-  const cur = task.partnerId ? partners.find((p) => p.id === task.partnerId) ?? null : null;
-  return (
-    <div className="px-1">
-      <button onClick={() => setOpen((v) => !v)}
-              className="w-full flex items-center justify-between py-2 text-[11px] font-semibold"
-              style={{ color: C.charcoal }}>
-        <span>🤝 {cur ? `Partner: ${cur.name}` : "Assign partner"}</span>
-        <span style={{ color: C.muted }}>{open ? "−" : "+"}</span>
-      </button>
-      {open && (
-        <div className="flex flex-wrap gap-1.5 pb-1.5">
-          <Chip selected={!task.partnerId} onClick={() => { onUpdate({ ...task, partnerId: null }); setOpen(false); }}>None</Chip>
-          {partners.map((p) => (
-            <Chip key={p.id} selected={task.partnerId === p.id}
-                  onClick={() => { onUpdate({ ...task, partnerId: p.id }); setOpen(false); }}>
-              <span style={{ background: p.color, color: "#fff", width: 14, height: 14, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, marginRight: 4 }}>{p.initial}</span>
-              {p.name}
-            </Chip>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+/* ================== Sub-components ================== */
 
-function DropdownDue({ task, onUpdate }: { task: Task; onUpdate: (t: Task) => void }) {
-  const [open, setOpen] = useState(false);
-  const today = new Date();
-  const cur = task.due ?? "—";
-  return (
-    <div className="px-1">
-      <button onClick={() => setOpen((v) => !v)}
-              className="w-full flex items-center justify-between py-2 text-[11px] font-semibold"
-              style={{ color: C.charcoal }}>
-        <span>📅 Due day: <span style={{ color: C.muted }}>{cur}</span></span>
-        <span style={{ color: C.muted }}>{open ? "−" : "+"}</span>
-      </button>
-      {open && (
-        <div className="flex flex-wrap gap-1.5 pb-1.5">
-          <Chip selected={task.due == null} onClick={() => { onUpdate({ ...task, due: null }); setOpen(false); }}>No date</Chip>
-          <Chip selected={task.due === today.getDate()} onClick={() => { onUpdate({ ...task, due: today.getDate() }); setOpen(false); }}>Today ({today.getDate()})</Chip>
-          {[1, 3, 7, 14].map((delta) => {
-            const d = new Date(today); d.setDate(d.getDate() + delta);
-            return (
-              <Chip key={delta} selected={task.due === d.getDate()}
-                    onClick={() => { onUpdate({ ...task, due: d.getDate() }); setOpen(false); }}>
-                +{delta}d ({d.getDate()})
-              </Chip>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+function OptionRow({
+  icon,
+  label,
+  children,
+  hideTrailing,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+  hideTrailing?: boolean;
+}) {
+  // Split children: first OptionRow argument is the chip strip / control,
+  // optional second <Trailing> child shows the current value at the right of the head row.
+  const arr = Array.isArray(children) ? children : [children];
+  const control = arr.find((c) => !(isElementOfType(c, Trailing)));
+  const trailing = arr.find((c) => isElementOfType(c, Trailing));
 
-function DropdownRecurring({ task, onUpdate }: { task: Task; onUpdate: (t: Task) => void }) {
   return (
-    <div className="px-1 pb-1">
-      <div className="flex items-center justify-between py-2 text-[11px] font-semibold" style={{ color: C.charcoal }}>
-        <span>🔄 Recurring</span>
-        <div className="flex gap-1.5">
-          <Chip selected={task.recurring == null} onClick={() => onUpdate({ ...task, recurring: null })}>Off</Chip>
-          <Chip selected={task.recurring === "daily"} onClick={() => onUpdate({ ...task, recurring: "daily" })}>Daily</Chip>
-          <Chip selected={task.recurring === "weekly"} onClick={() => onUpdate({ ...task, recurring: "weekly" })}>Weekly</Chip>
+    <div style={{ padding: "8px 4px" }}>
+      <div className="flex items-center gap-3">
+        <div
+          className="shrink-0 flex items-center justify-center"
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 9,
+            background: N.sageTint14,
+            color: N.sageDeep,
+          }}
+        >
+          {icon}
         </div>
+        <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: N.ink }}>{label}</span>
+        {!hideTrailing && trailing}
+      </div>
+      <div className="mt-2" style={{ marginLeft: 40 }}>
+        {control}
       </div>
     </div>
   );
 }
 
-function Chip({ selected, onClick, children }: { selected?: boolean; onClick: () => void; children: React.ReactNode }) {
+function Trailing({ children }: { children: React.ReactNode }) {
+  return <span>{children}</span>;
+}
+Trailing.displayName = "Trailing";
+function isElementOfType(child: unknown, Component: { displayName?: string }): boolean {
+  if (!child || typeof child !== "object") return false;
+  const el = child as { type?: { displayName?: string; name?: string } };
+  return el.type?.displayName === Component.displayName;
+}
+
+function ChipStrip({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-wrap gap-1.5">{children}</div>;
+}
+
+function Chip({
+  selected,
+  onClick,
+  children,
+  variant = "filled",
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  variant?: "filled" | "ghost" | "outline";
+}) {
+  const base: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    padding: "5px 11px",
+    borderRadius: 999,
+    border: "1px solid transparent",
+    transition: "background 0.12s ease, color 0.12s ease, border-color 0.12s ease",
+    display: "inline-flex",
+    alignItems: "center",
+  };
+  const styled: React.CSSProperties = (() => {
+    if (selected) {
+      return { ...base, background: N.sage, color: "#fff", border: `1px solid ${N.sage}` };
+    }
+    if (variant === "ghost") {
+      return { ...base, background: "transparent", color: N.inkSoft, border: `1px solid ${N.line}` };
+    }
+    if (variant === "outline") {
+      return { ...base, background: N.creamCard, color: N.sageDeep, border: `1px solid ${N.sageDeep}` };
+    }
+    return { ...base, background: N.sageTint14, color: N.sageDeep };
+  })();
+
   return (
-    <button onClick={onClick} className="px-2.5 h-7 rounded-md text-[11px] font-semibold flex items-center"
+    <button type="button" onClick={onClick} style={styled}>
+      {children}
+    </button>
+  );
+}
+
+function GoalChip({ name }: { name: string }) {
+  return (
+    <span
+      style={{
+        background: N.sageTint22,
+        color: N.sageDeep,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: "4px 10px",
+        borderRadius: 999,
+      }}
+    >
+      {name}
+    </span>
+  );
+}
+
+function DueChip({ day }: { day: number }) {
+  const d = new Date();
+  d.setDate(day);
+  const label = d.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  return (
+    <span
+      style={{
+        background: N.sageTint22,
+        color: N.sageDeep,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: "4px 10px",
+        borderRadius: 999,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function PartnerChip({ p }: { p: Partner }) {
+  return (
+    <span
+      style={{
+        background: N.sageTint22,
+        color: N.sageDeep,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: "3px 10px 3px 4px",
+        borderRadius: 999,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
+      <Avatar p={p} size={20} />
+      {p.name}
+    </span>
+  );
+}
+
+function Avatar({ p, size = 24 }: { p: Partner; size?: number }) {
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: p.color,
+        color: "#fff",
+        fontSize: Math.round(size * 0.42),
+        fontWeight: 600,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {p.initial}
+    </span>
+  );
+}
+
+function PlusGlyph() {
+  return (
+    <span
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 999,
+        background: N.sageTint14,
+        color: N.sageDeep,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 600,
+        fontSize: 16,
+      }}
+    >
+      +
+    </span>
+  );
+}
+
+function Segmented({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const options = ["Off", "Daily", "Weekly"];
+  return (
+    <div
+      role="radiogroup"
+      className="inline-flex"
+      style={{
+        background: N.creamCard,
+        border: `1px solid ${N.line}`,
+        borderRadius: 999,
+        padding: 3,
+        gap: 3,
+      }}
+    >
+      {options.map((opt) => {
+        const selected = (value === "Off" && opt === "Off") || value === opt.toLowerCase() || value === opt;
+        return (
+          <button
+            key={opt}
+            role="radio"
+            aria-checked={selected}
+            type="button"
+            onClick={() => onChange(opt)}
             style={{
-              background: selected ? C.sage : C.bg,
-              color: selected ? "#fff" : C.charcoal,
-              border: `1px solid ${selected ? C.sage : C.faint}`,
-            }}>{children}</button>
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "5px 12px",
+              borderRadius: 999,
+              background: selected ? N.sage : "transparent",
+              color: selected ? "#fff" : N.inkSoft,
+              transition: "background 0.12s ease, color 0.12s ease",
+            }}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ================== Helpers ================== */
+
+function dueOffsets(): { day: number; label: string }[] {
+  const today = new Date();
+  return [0, 1, 3, 7].map((d) => {
+    const dt = new Date(today);
+    dt.setDate(today.getDate() + d);
+    const day = dt.getDate();
+    const label = d === 0 ? `Today (${day})` : d === 1 ? `Tomorrow (${day})` : `+${d}d (${day})`;
+    return { day, label };
+  });
+}
+
+/* ================== Inline line icons (24px grid, ~1.7 stroke) ================== */
+
+const stroke = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.7,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+} as const;
+
+function ChevronIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" {...stroke} style={{ color: N.inkSoft }} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill={filled ? N.tan : "none"}
+      stroke={filled ? N.tan : N.inkFaint}
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3l2.6 5.7 6.2.8-4.6 4.2 1.2 6.1L12 17.7 6.6 19.8l1.2-6.1L3.2 9.5l6.2-.8z" />
+    </svg>
+  );
+}
+
+function TargetIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <circle cx="9" cy="9" r="3.2" />
+      <circle cx="17" cy="10" r="2.6" />
+      <path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" />
+      <path d="M14.5 14.8c2 0 6.5 1.5 6.5 4.2" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 9h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+      <path d="M21 4v4h-4" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+      <path d="M3 20v-4h4" />
+    </svg>
   );
 }

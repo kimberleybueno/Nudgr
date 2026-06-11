@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 import type { Task, Goal, Partner } from "@/types";
 import TaskRow from "./TaskRow";
 
@@ -32,7 +32,7 @@ export default function TaskList({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragDy, setDragDy] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
-  const rowHeight = 46; // approx px per row including gap
+  const rowHeight = 56;
 
   const sorted = useMemo(() => sortTasks(tasks), [tasks]);
   const active = sorted.filter((t) => !t.done);
@@ -45,10 +45,7 @@ export default function TaskList({
     setInput("");
   };
 
-  const handleHoldStart = (id: string) => {
-    setDraggedId(id);
-    setDragDy(0);
-  };
+  const handleHoldStart = (id: string) => { setDraggedId(id); setDragDy(0); };
   const handleHoldMove = (id: string, dy: number) => {
     if (draggedId !== id) return;
     setDragDy(dy);
@@ -63,7 +60,6 @@ export default function TaskList({
     setDragDy(0);
   };
 
-  // Clear drag if scroll happens
   useEffect(() => {
     const onScroll = () => { if (draggedId) { setDraggedId(null); setDragDy(0); } };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -72,43 +68,90 @@ export default function TaskList({
 
   return (
     <section className="px-4 pt-5">
-      <div className="flex items-baseline justify-between mb-2.5">
-        <h2 className="text-[15px] font-bold" style={{ color: C.sageDark }}>
-          {isToday ? "Today's To-Dos" : `To-Dos for ${dayLabel}`}
-        </h2>
-        <span className="text-[11px] font-semibold" style={{ color: C.muted }}>
+      {/* Eyebrow + remaining count.
+          - When viewing today, the spec calls for an uppercase TODAY eyebrow.
+          - Other days keep a friendly H2 (still living inside Today list shell). */}
+      <div className="flex items-baseline justify-between mb-3">
+        {isToday ? (
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.09em",
+              textTransform: "uppercase",
+              color: N.sageDeep,
+            }}
+          >
+            Today
+          </span>
+        ) : (
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: N.sageDarkest }}>
+            To-Dos for {dayLabel}
+          </h2>
+        )}
+        <span style={{ fontSize: 12.5, fontWeight: 500, color: N.inkSoft }}>
           {active.length} remaining
         </span>
       </div>
 
-      {/* Quick-add */}
-      <div
-        className="flex items-center gap-2.5 px-3.5 py-2.5 mb-2"
+      {/* Typed quick-add bar (cream-card surface + plus icon + sage-deep Add button) */}
+      <form
+        onSubmit={(e) => { e.preventDefault(); handleAdd(); }}
+        className="flex items-center gap-2 mb-2"
         style={{
-          background: "#fff",
-          borderRadius: 10,
-          border: `1px solid ${input.trim() ? C.sage : C.faint}`,
-          transition: "border-color 0.2s",
+          background: N.creamCard,
+          borderRadius: 14,
+          border: `1px solid ${input.trim() ? N.lineStrong : N.line}`,
+          padding: "8px 8px 8px 12px",
+          transition: "border-color 0.18s ease",
+          boxShadow: N.shadowSoft,
         }}
       >
-        <div className="w-[18px] h-[18px] rounded-full shrink-0" style={{ border: `1.5px solid ${C.faint}` }} />
+        <span
+          aria-hidden="true"
+          className="shrink-0 flex items-center justify-center"
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 8,
+            background: N.sageTint14,
+            color: N.sageDeep,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </span>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-          placeholder="Add a task..."
-          className="flex-1 text-[13px] outline-none bg-transparent"
-          style={{ color: C.charcoal }}
+          placeholder={isToday ? "Type a task, press enter" : `Add a task for ${dayLabel}, press enter`}
+          aria-label="New task"
+          className="flex-1 bg-transparent outline-none"
+          style={{
+            fontSize: 14.5,
+            color: N.ink,
+            minWidth: 0,
+          }}
         />
         {input.trim() && (
-          <button onClick={handleAdd}
-                  className="px-3 h-7 rounded-md text-[11px] font-bold text-white"
-                  style={{ background: C.sage }}>Add</button>
+          <button
+            type="submit"
+            className="rounded-full text-white"
+            style={{
+              background: N.sageDeep,
+              fontSize: 13,
+              fontWeight: 600,
+              padding: "6px 14px",
+            }}
+          >
+            Add
+          </button>
         )}
-      </div>
+      </form>
 
       {/* Active tasks */}
-      <div ref={listRef} className="flex flex-col gap-1">
+      <div ref={listRef} className="flex flex-col gap-2">
         {active.map((t) => (
           <TaskRow
             key={t.id}
@@ -127,15 +170,21 @@ export default function TaskList({
           />
         ))}
         {active.length === 0 && (
-          <div className="rounded-2xl px-5 py-7 text-center mt-1"
-               style={{ background: C.bg, border: `1px dashed ${C.faint}` }}>
-            <div className="text-3xl mb-2">✓</div>
-            <div className="text-[14px] font-bold mb-1" style={{ color: C.sageDark }}>
+          <div
+            className="text-center mt-1"
+            style={{
+              background: N.sageTint08,
+              border: `1px dashed ${N.line}`,
+              borderRadius: 14,
+              padding: "28px 20px",
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 600, color: N.sageDarkest, marginBottom: 4 }}>
               {isToday ? "No to-dos yet" : `No tasks for ${dayLabel}`}
             </div>
-            <div className="text-[11px] max-w-[260px] mx-auto leading-relaxed" style={{ color: C.muted }}>
+            <div style={{ fontSize: 12.5, color: N.inkSoft, maxWidth: 260, margin: "0 auto" }}>
               {isToday
-                ? "Add your first task above to start nudging yourself forward."
+                ? "Add your first step above, or say it out loud."
                 : "Add one above, or tap today to go back."}
             </div>
           </div>
@@ -147,15 +196,15 @@ export default function TaskList({
         <>
           <button
             onClick={() => setShowCompleted((v) => !v)}
-            className="w-full mt-3 mb-1 flex items-center gap-2 text-[10px] font-semibold tracking-wide"
-            style={{ color: C.muted }}
+            className="w-full mt-4 mb-2 flex items-center gap-2"
+            style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.09em", color: N.inkSoft }}
           >
-            <div className="flex-1 h-px" style={{ background: C.faint }} />
+            <div className="flex-1 h-px" style={{ background: N.line }} />
             <span>{done.length} COMPLETED {showCompleted ? "▴" : "▾"}</span>
-            <div className="flex-1 h-px" style={{ background: C.faint }} />
+            <div className="flex-1 h-px" style={{ background: N.line }} />
           </button>
           {showCompleted && (
-            <div className="flex flex-col gap-1 anim-up">
+            <div className="flex flex-col gap-2 anim-up">
               {done.map((t) => (
                 <TaskRow
                   key={t.id}
