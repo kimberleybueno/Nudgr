@@ -12,7 +12,13 @@ export interface Task {
   overdue: boolean;
   goalId: string | null;
   partnerId: string | null;
-  due: number | null;        // day of month (1-31), null = no specific date
+  /**
+   * Local-date ISO string (YYYY-MM-DD) the task is due on.
+   * null = no specific date. Replaces the previous `due: number` day-of-month
+   * field. Local-date avoids timezone shifts that would happen with
+   * toISOString().slice(0, 10).
+   */
+  dueDate: string | null;
   recurring: Recurring;
   createdAt: string;          // ISO date string
   completedAt?: string;       // ISO date string set when marked done

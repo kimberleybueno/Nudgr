@@ -5,6 +5,7 @@ import { C } from "@/lib/colors";
 import type { Task, Goal, Partner, UserData } from "@/types";
 import { refreshOverdue } from "@/lib/overdue";
 import { calculateStreak, recordCompletion } from "@/lib/streak";
+import { todayIso as nowIso, humanDueLabel } from "@/lib/dates";
 
 import GreetingHeader from "./GreetingHeader";
 import WeekStrip from "./WeekStrip";
@@ -21,16 +22,9 @@ interface Props {
 }
 
 const id = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
-const todayDate = () => new Date().toISOString().slice(0, 10);
-const todayDayOfMonth = () => new Date().getDate();
-const dayLabel = (day: number) => {
-  const d = new Date();
-  d.setDate(day);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
 
 export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
-  const [selectedDay, setSelectedDay] = useState<number>(() => todayDayOfMonth());
+  const [selectedDate, setSelectedDate] = useState<string>(() => nowIso());
   const [confetti, setConfetti] = useState<ConfettiTier | null>(null);
   const [goalModal, setGoalModal] = useState<{ mode: "create" } | { mode: "edit"; goal: Goal } | null>(null);
 
@@ -45,8 +39,8 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isToday = selectedDay === todayDayOfMonth();
-  const todayLabelStr = isToday ? undefined : dayLabel(selectedDay);
+  const todayIsoStr = nowIso();
+  const isToday = selectedDate === todayIsoStr;
 
   // Combined task list for the selected date (standalone + tasks-of-goals)
   const visibleTasks = useMemo(() => {
@@ -54,43 +48,26 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     const all = [...user.tasks, ...goalTasks];
     if (isToday) {
       return all.filter((t) =>
-        t.due === selectedDay ||
-        t.due == null ||
+        t.dueDate === selectedDate ||
+        t.dueDate == null ||
         t.recurring != null
       );
     }
     return all.filter((t) =>
-      t.due === selectedDay ||
+      t.dueDate === selectedDate ||
       t.recurring != null
     );
-  }, [user.tasks, user.goals, selectedDay, isToday]);
+  }, [user.tasks, user.goals, selectedDate, isToday]);
 
-  // Days that have tasks (for the calendar dots)
-  const daysWithTasks = useMemo(() => {
-    const set = new Set<number>();
+  // Dates that have at least one task (for the WeekStrip dot)
+  const datesWithTasks = useMemo(() => {
+    const set = new Set<string>();
     const goalTasks = user.goals.flatMap((g) => g.tasks);
     for (const t of [...user.tasks, ...goalTasks]) {
-      if (t.due != null) set.add(t.due);
+      if (t.dueDate) set.add(t.dueDate);
     }
     return set;
   }, [user.tasks, user.goals]);
-
-  // Hero metrics — always today, ignore selectedDay per brief? Re-reading:
-  // "The label changes to show the selected date when viewing another day: 'MAY 26'"
-  // So both label AND values reflect selectedDay.
-  const heroMetrics = useMemo(() => {
-    const todayDay = todayDayOfMonth();
-    const relevantDay = selectedDay;
-    const goalTasks = user.goals.flatMap((g) => g.tasks);
-    const pool = [...user.tasks, ...goalTasks].filter((t) => {
-      if (relevantDay === todayDay) return t.due === relevantDay || t.due == null || t.recurring != null;
-      return t.due === relevantDay || t.recurring != null;
-    });
-    const done = pool.filter((t) => t.done).length;
-    const total = pool.length;
-    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-    return { pct, done, total };
-  }, [user.tasks, user.goals, selectedDay]);
 
   /* ---------- Mutations ---------- */
 
@@ -110,7 +87,7 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     }));
   };
 
-  const addStandalone = (text: string, due: number) => {
+  const addStandalone = (text: string, dueDate: string | null) => {
     const newTask: Task = {
       id: id("t"),
       text,
@@ -119,9 +96,9 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       overdue: false,
       goalId: null,
       partnerId: null,
-      due,
+      dueDate,
       recurring: null,
-      createdAt: todayDate(),
+      createdAt: nowIso(),
     };
     setUser((u) => ({ ...u, tasks: [newTask, ...u.tasks] }));
   };
@@ -135,9 +112,9 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       overdue: false,
       goalId,
       partnerId: null,
-      due: todayDayOfMonth(),
+      dueDate: nowIso(),
       recurring: null,
-      createdAt: todayDate(),
+      createdAt: nowIso(),
     };
     setUser((u) => ({
       ...u,
@@ -153,7 +130,7 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     setUser((u) => {
       const map = (t: Task): Task => {
         if (t.id !== taskId) return t;
-        const flipped = { ...t, done: !t.done, completedAt: !t.done ? todayDate() : undefined };
+        const flipped = { ...t, done: !t.done, completedAt: !t.done ? nowIso() : undefined };
         becameDone = !t.done;
         return flipped;
       };
@@ -173,10 +150,10 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       };
 
       // Check if all today's tasks are now done
-      const todayDay = todayDayOfMonth();
+      const todayIsoNow = nowIso();
       const goalTasks = updated.goals.flatMap((g) => g.tasks);
       const todays = [...updated.tasks, ...goalTasks].filter((t) =>
-        t.due === todayDay || t.due == null || t.recurring != null
+        t.dueDate === todayIsoNow || t.dueDate == null || t.recurring != null
       );
       allTodayDone = todays.length > 0 && todays.every((t) => t.done);
 
@@ -184,7 +161,7 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       if (becameDone) {
         const completionDates = recordCompletion(updated.completionDates);
         updated.completionDates = completionDates;
-        updated.lastActiveDate = todayDate();
+        updated.lastActiveDate = nowIso();
         updated.streak = calculateStreak(completionDates);
       }
 
@@ -272,9 +249,9 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
 
   const weekStrip = (
     <WeekStrip
-      selectedDay={selectedDay}
-      onSelect={setSelectedDay}
-      daysWithTasks={daysWithTasks}
+      selected={selectedDate}
+      onSelect={setSelectedDate}
+      datesWithTasks={datesWithTasks}
     />
   );
 
@@ -285,15 +262,16 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
       tasks={visibleTasks}
       goals={user.goals}
       partners={user.partners}
-      selectedDay={selectedDay}
+      selectedDate={selectedDate}
       isToday={isToday}
-      dayLabel={isToday ? "today" : dayLabel(selectedDay)}
+      dayLabel={isToday ? "today" : humanDueLabel(selectedDate)}
       onAddStandalone={addStandalone}
       onUpdateTask={updateTask}
       onDeleteTask={deleteTask}
       onToggleTask={toggleTask}
       onReorder={reorderTask}
       onCreateGoalAndLink={createGoalAndLink}
+      isDesktop={isDesktop}
     />
   );
 

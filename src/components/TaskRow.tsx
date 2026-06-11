@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { N } from "@/lib/colors";
 import type { Task, Goal, Partner, Recurring } from "@/types";
+import { humanDueLabel } from "@/lib/dates";
 import InlineGoalForm from "./InlineGoalForm";
+import GoalSelectorSheet from "./GoalSelectorSheet";
+import PartnerSelectorSheet from "./PartnerSelectorSheet";
+import DateSelectorSheet from "./DateSelectorSheet";
 
 interface Props {
   task: Task;
@@ -19,7 +23,10 @@ interface Props {
   onHoldEnd?: (id: string) => void;
   liftedDy?: number;
   isLifted?: boolean;
+  isDesktop?: boolean;
 }
+
+type PickerName = "goal" | "partner" | "date" | null;
 
 /**
  * Expandable task row, per design_handoff_nudgr_app/README.md sec 6.
@@ -36,13 +43,14 @@ export default function TaskRow({
   task, goals, partners,
   onToggle, onUpdate, onDelete, onCreateGoalAndLink,
   onHoldStart, onHoldMove, onHoldEnd,
-  liftedDy = 0, isLifted = false,
+  liftedDy = 0, isLifted = false, isDesktop = false,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [pop, setPop] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const [deleteArmed, setDeleteArmed] = useState(false);
   const [showInlineGoal, setShowInlineGoal] = useState(false);
+  const [picker, setPicker] = useState<PickerName>(null);
 
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
@@ -121,7 +129,7 @@ export default function TaskRow({
   };
 
   const setRecurring = (r: Recurring) => onUpdate({ ...task, recurring: r });
-  const setDue = (n: number | null) => onUpdate({ ...task, due: n });
+  const setDueDate = (iso: string | null) => onUpdate({ ...task, dueDate: iso });
   const setGoal = (id: string | null) => onUpdate({ ...task, goalId: id });
   const setPartner = (id: string | null) => onUpdate({ ...task, partnerId: id });
 
@@ -238,98 +246,64 @@ export default function TaskRow({
             className="anim-up"
             style={{
               borderTop: `1px solid ${N.line}`,
-              padding: "8px 12px 12px",
+              padding: "4px 8px 8px",
             }}
           >
-            {/* Add to a goal */}
-            <OptionRow icon={<TargetIcon />} label="Add to a goal">
-              <ChipStrip>
-                <Chip
-                  selected={!task.goalId}
-                  onClick={() => setGoal(null)}
-                  variant="ghost"
-                >
-                  None
-                </Chip>
-                {goals.map((g) => (
-                  <Chip
-                    key={g.id}
-                    selected={task.goalId === g.id}
-                    onClick={() => setGoal(g.id)}
-                  >
-                    {g.name}
-                  </Chip>
-                ))}
-                <Chip
-                  selected={false}
-                  onClick={() => setShowInlineGoal(true)}
-                  variant="outline"
-                >
-                  + New goal
-                </Chip>
-              </ChipStrip>
-              <Trailing>
-                {linkedGoal ? <GoalChip name={linkedGoal.name} /> : <PlusGlyph />}
-              </Trailing>
-            </OptionRow>
-
-            {/* Assign partner */}
-            <OptionRow icon={<PeopleIcon />} label="Assign partner">
-              <ChipStrip>
-                <Chip
-                  selected={!task.partnerId}
-                  onClick={() => setPartner(null)}
-                  variant="ghost"
-                >
-                  None
-                </Chip>
-                {partners.map((p) => (
-                  <Chip
-                    key={p.id}
-                    selected={task.partnerId === p.id}
-                    onClick={() => setPartner(p.id)}
-                  >
-                    <Avatar p={p} size={16} />
-                    <span style={{ marginLeft: 6 }}>{p.name}</span>
-                  </Chip>
-                ))}
-              </ChipStrip>
-              <Trailing>
-                {partner ? <PartnerChip p={partner} /> : <PlusGlyph />}
-              </Trailing>
-            </OptionRow>
-
-            {/* Due day */}
-            <OptionRow icon={<CalendarIcon />} label="Due day">
-              <ChipStrip>
-                <Chip selected={task.due == null} onClick={() => setDue(null)} variant="ghost">
-                  None
-                </Chip>
-                {dueOffsets().map((opt) => (
-                  <Chip
-                    key={opt.day}
-                    selected={task.due === opt.day}
-                    onClick={() => setDue(opt.day)}
-                  >
-                    {opt.label}
-                  </Chip>
-                ))}
-              </ChipStrip>
-              <Trailing>
-                {task.due != null ? <DueChip day={task.due} /> : <PlusGlyph />}
-              </Trailing>
-            </OptionRow>
-
-            {/* Recurring */}
-            <OptionRow icon={<RefreshIcon />} label="Recurring" hideTrailing>
-              <Segmented
-                value={task.recurring ?? "Off"}
-                onChange={(v) => setRecurring(v === "Off" ? null : (v.toLowerCase() as Recurring))}
-              />
-            </OptionRow>
+            <PickerRow
+              icon={<TargetIcon />}
+              label="Add to a goal"
+              value={linkedGoal ? <GoalChip name={linkedGoal.name} /> : null}
+              onClick={() => setPicker("goal")}
+            />
+            <PickerRow
+              icon={<PeopleIcon />}
+              label="Assign partner"
+              value={partner ? <PartnerChip p={partner} /> : null}
+              onClick={() => setPicker("partner")}
+            />
+            <PickerRow
+              icon={<CalendarIcon />}
+              label="Due day"
+              value={task.dueDate ? <DueChip iso={task.dueDate} /> : null}
+              onClick={() => setPicker("date")}
+            />
+            <SegmentedRow
+              icon={<RefreshIcon />}
+              label="Recurring"
+              value={task.recurring ?? "Off"}
+              onChange={(v) =>
+                setRecurring(v === "Off" ? null : (v.toLowerCase() as Recurring))
+              }
+            />
           </div>
         )}
       </div>
+
+      {/* Modal pickers (sec 11). One mounted at a time. */}
+      <GoalSelectorSheet
+        open={picker === "goal"}
+        onClose={() => setPicker(null)}
+        goals={goals}
+        value={task.goalId}
+        onPick={setGoal}
+        onCreateGoal={() => { setPicker(null); setShowInlineGoal(true); }}
+        isDesktop={isDesktop}
+      />
+      <PartnerSelectorSheet
+        open={picker === "partner"}
+        onClose={() => setPicker(null)}
+        partners={partners}
+        value={task.partnerId}
+        onPick={setPartner}
+        isDesktop={isDesktop}
+      />
+      <DateSelectorSheet
+        open={picker === "date"}
+        onClose={() => setPicker(null)}
+        value={task.dueDate}
+        onPick={setDueDate}
+        isDesktop={isDesktop}
+      />
 
       {showInlineGoal && (
         <InlineGoalForm
@@ -346,100 +320,115 @@ export default function TaskRow({
 
 /* ================== Sub-components ================== */
 
-function OptionRow({
+/** Row that opens a modal picker on tap. icon-tile + label + value + chevron. */
+function PickerRow({
   icon,
   label,
-  children,
-  hideTrailing,
+  value,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
-  children: React.ReactNode;
-  hideTrailing?: boolean;
+  value: React.ReactNode | null;
+  onClick: () => void;
 }) {
-  // Split children: first OptionRow argument is the chip strip / control,
-  // optional second <Trailing> child shows the current value at the right of the head row.
-  const arr = Array.isArray(children) ? children : [children];
-  const control = arr.find((c) => !(isElementOfType(c, Trailing)));
-  const trailing = arr.find((c) => isElementOfType(c, Trailing));
-
   return (
-    <div style={{ padding: "8px 4px" }}>
-      <div className="flex items-center gap-3">
-        <div
-          className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 9,
-            background: N.sageTint14,
-            color: N.sageDeep,
-          }}
-        >
-          {icon}
-        </div>
-        <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: N.ink }}>{label}</span>
-        {!hideTrailing && trailing}
-      </div>
-      <div className="mt-2" style={{ marginLeft: 40 }}>
-        {control}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left flex items-center"
+      style={{ padding: "10px 8px", gap: 12 }}
+    >
+      <span
+        aria-hidden="true"
+        className="shrink-0 flex items-center justify-center"
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 9,
+          background: N.sageTint14,
+          color: N.sageDeep,
+        }}
+      >
+        {icon}
+      </span>
+      <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: N.ink }}>{label}</span>
+      {value ?? <span style={{ fontSize: 12.5, color: N.inkFaint }}>Add</span>}
+      <span aria-hidden="true" style={{ color: N.inkFaint }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </button>
   );
 }
 
-function Trailing({ children }: { children: React.ReactNode }) {
-  return <span>{children}</span>;
-}
-Trailing.displayName = "Trailing";
-function isElementOfType(child: unknown, Component: { displayName?: string }): boolean {
-  if (!child || typeof child !== "object") return false;
-  const el = child as { type?: { displayName?: string; name?: string } };
-  return el.type?.displayName === Component.displayName;
-}
-
-function ChipStrip({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-1.5">{children}</div>;
-}
-
-function Chip({
-  selected,
-  onClick,
-  children,
-  variant = "filled",
+/** Row whose right side is an inline segmented control (used for recurring). */
+function SegmentedRow({
+  icon,
+  label,
+  value,
+  onChange,
 }: {
-  selected: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  variant?: "filled" | "ghost" | "outline";
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
 }) {
-  const base: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 600,
-    padding: "5px 11px",
-    borderRadius: 999,
-    border: "1px solid transparent",
-    transition: "background 0.12s ease, color 0.12s ease, border-color 0.12s ease",
-    display: "inline-flex",
-    alignItems: "center",
-  };
-  const styled: React.CSSProperties = (() => {
-    if (selected) {
-      return { ...base, background: N.sage, color: "#fff", border: `1px solid ${N.sage}` };
-    }
-    if (variant === "ghost") {
-      return { ...base, background: "transparent", color: N.inkSoft, border: `1px solid ${N.line}` };
-    }
-    if (variant === "outline") {
-      return { ...base, background: N.creamCard, color: N.sageDeep, border: `1px solid ${N.sageDeep}` };
-    }
-    return { ...base, background: N.sageTint14, color: N.sageDeep };
-  })();
-
+  const options = ["Off", "Daily", "Weekly"];
   return (
-    <button type="button" onClick={onClick} style={styled}>
-      {children}
-    </button>
+    <div className="flex items-center" style={{ padding: "10px 8px", gap: 12 }}>
+      <span
+        aria-hidden="true"
+        className="shrink-0 flex items-center justify-center"
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 9,
+          background: N.sageTint14,
+          color: N.sageDeep,
+        }}
+      >
+        {icon}
+      </span>
+      <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: N.ink }}>{label}</span>
+      <div
+        role="radiogroup"
+        className="inline-flex"
+        style={{
+          background: N.creamCard,
+          border: `1px solid ${N.line}`,
+          borderRadius: 999,
+          padding: 3,
+          gap: 3,
+        }}
+      >
+        {options.map((opt) => {
+          const selected =
+            (value === "Off" && opt === "Off") || value === opt.toLowerCase() || value === opt;
+          return (
+            <button
+              key={opt}
+              role="radio"
+              aria-checked={selected}
+              type="button"
+              onClick={() => onChange(opt)}
+              style={{
+                fontSize: 11.5,
+                fontWeight: 600,
+                padding: "4px 10px",
+                borderRadius: 999,
+                background: selected ? N.sage : "transparent",
+                color: selected ? "#fff" : N.inkSoft,
+                transition: "background 0.12s ease, color 0.12s ease",
+              }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -460,10 +449,7 @@ function GoalChip({ name }: { name: string }) {
   );
 }
 
-function DueChip({ day }: { day: number }) {
-  const d = new Date();
-  d.setDate(day);
-  const label = d.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+function DueChip({ iso }: { iso: string }) {
   return (
     <span
       style={{
@@ -475,7 +461,7 @@ function DueChip({ day }: { day: number }) {
         borderRadius: 999,
       }}
     >
-      {label}
+      {humanDueLabel(iso)}
     </span>
   );
 }
@@ -522,86 +508,6 @@ function Avatar({ p, size = 24 }: { p: Partner; size?: number }) {
   );
 }
 
-function PlusGlyph() {
-  return (
-    <span
-      style={{
-        width: 22,
-        height: 22,
-        borderRadius: 999,
-        background: N.sageTint14,
-        color: N.sageDeep,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: 600,
-        fontSize: 16,
-      }}
-    >
-      +
-    </span>
-  );
-}
-
-function Segmented({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const options = ["Off", "Daily", "Weekly"];
-  return (
-    <div
-      role="radiogroup"
-      className="inline-flex"
-      style={{
-        background: N.creamCard,
-        border: `1px solid ${N.line}`,
-        borderRadius: 999,
-        padding: 3,
-        gap: 3,
-      }}
-    >
-      {options.map((opt) => {
-        const selected = (value === "Off" && opt === "Off") || value === opt.toLowerCase() || value === opt;
-        return (
-          <button
-            key={opt}
-            role="radio"
-            aria-checked={selected}
-            type="button"
-            onClick={() => onChange(opt)}
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              padding: "5px 12px",
-              borderRadius: 999,
-              background: selected ? N.sage : "transparent",
-              color: selected ? "#fff" : N.inkSoft,
-              transition: "background 0.12s ease, color 0.12s ease",
-            }}
-          >
-            {opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ================== Helpers ================== */
-
-function dueOffsets(): { day: number; label: string }[] {
-  const today = new Date();
-  return [0, 1, 3, 7].map((d) => {
-    const dt = new Date(today);
-    dt.setDate(today.getDate() + d);
-    const day = dt.getDate();
-    const label = d === 0 ? `Today (${day})` : d === 1 ? `Tomorrow (${day})` : `+${d}d (${day})`;
-    return { day, label };
-  });
-}
 
 /* ================== Inline line icons (24px grid, ~1.7 stroke) ================== */
 

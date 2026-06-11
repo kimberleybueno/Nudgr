@@ -1,12 +1,17 @@
 import type { UserData, Task, Goal, Partner, Pact, Message } from "@/types";
+import { ymd } from "@/lib/dates";
 
 const today = new Date();
-const todayDay = today.getDate();
-const todayIso = today.toISOString().slice(0, 10);
+const todayIso = ymd(today);
 const daysAgo = (n: number) => {
   const d = new Date(today);
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return ymd(d);
+};
+const daysAhead = (n: number) => {
+  const d = new Date(today);
+  d.setDate(d.getDate() + n);
+  return ymd(d);
 };
 const monthLabel = (offset: number) => {
   const d = new Date(today);
@@ -60,7 +65,7 @@ const t = (overrides: Partial<Task>): Task => ({
   overdue: false,
   goalId: null,
   partnerId: null,
-  due: todayDay,
+  dueDate: todayIso,
   recurring: null,
   createdAt: todayIso,
   ...overrides,
@@ -80,7 +85,7 @@ export const SAMPLE_GOALS: Goal[] = [
     deadlineDate: isoForOffset(2),
     tasks: [
       t({ text: "Morning 5k", goalId: marathonId, recurring: "daily" }),
-      t({ text: "Long run Saturday", goalId: marathonId, due: todayDay + 3, recurring: "weekly" }),
+      t({ text: "Long run Saturday", goalId: marathonId, dueDate: daysAhead(3), recurring: "weekly" }),
       t({ text: "Stretch 10 min", goalId: marathonId, recurring: "daily", done: true, completedAt: todayIso }),
     ],
   },
@@ -93,8 +98,8 @@ export const SAMPLE_GOALS: Goal[] = [
     deadlineDate: isoForOffset(1),
     tasks: [
       t({ text: "Finalize onboarding copy", goalId: launchId, done: true, completedAt: daysAgo(1), createdAt: daysAgo(5) }),
-      t({ text: "Set up analytics", goalId: launchId, due: todayDay + 4 }),
-      t({ text: "Invite 20 beta users", goalId: launchId, due: todayDay + 7 }),
+      t({ text: "Set up analytics", goalId: launchId, dueDate: daysAhead(4) }),
+      t({ text: "Invite 20 beta users", goalId: launchId, dueDate: daysAhead(7) }),
     ],
   },
   {
@@ -106,15 +111,15 @@ export const SAMPLE_GOALS: Goal[] = [
     deadlineDate: isoForOffset(6),
     tasks: [
       t({ text: "Read 20 min", goalId: readId, recurring: "daily" }),
-      t({ text: "Finish current book", goalId: readId, due: todayDay + 5 }),
+      t({ text: "Finish current book", goalId: readId, dueDate: daysAhead(5) }),
     ],
   },
 ];
 
 export const SAMPLE_STANDALONE: Task[] = [
   t({ text: "Reply to Sara's email", star: true }),
-  t({ text: "Buy oat milk", due: null }),
-  t({ text: "Schedule dentist", due: null, createdAt: daysAgo(5), overdue: true }),
+  t({ text: "Buy oat milk", dueDate: null }),
+  t({ text: "Schedule dentist", dueDate: null, createdAt: daysAgo(5), overdue: true }),
 ];
 
 export const SAMPLE_USER: UserData = {

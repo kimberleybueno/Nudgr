@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { N } from "@/lib/colors";
+import { ymd, todayIso, addDays } from "@/lib/dates";
 
 interface Props {
-  /** Day of month (1-31) of the currently selected date in the displayed week. */
-  selectedDay: number;
-  onSelect: (day: number) => void;
-  /** Days (1-31) that have at least one task, used for the dot indicator. */
-  daysWithTasks?: Set<number>;
+  /** ISO date string of the currently selected day. */
+  selected: string;
+  onSelect: (iso: string) => void;
+  /** Set of ISO date strings that have at least one task (dot indicator). */
+  datesWithTasks?: Set<string>;
 }
 
 /**
@@ -19,15 +20,10 @@ interface Props {
  *   Selected = sage-deep fill, cream text. Others = cream-card + line.
  *   Tap selects. Left/right chevrons step through weeks.
  */
-export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Props) {
-  // Anchor: a Date inside the displayed week. Starts at today, can shift +/- 7 days.
-  const [anchor, setAnchor] = useState(() => new Date());
-
+export default function WeekStrip({ selected, onSelect, datesWithTasks }: Props) {
+  const [anchor, setAnchor] = useState(() => new Date(selected || todayIso()));
   const days = useMemo(() => buildWeek(anchor), [anchor]);
-  const today = new Date();
-  const todayKey = ymd(today);
-  const isThisMonth = (d: Date) =>
-    d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+  const today = todayIso();
 
   return (
     <section className="px-5 pt-1 pb-3">
@@ -37,13 +33,7 @@ export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Prop
           onClick={() => setAnchor(addDays(anchor, -7))}
           aria-label="Previous week"
           className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 999,
-            background: "transparent",
-            color: N.inkSoft,
-          }}
+          style={{ width: 32, height: 32, borderRadius: 999, color: N.inkSoft }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -57,30 +47,28 @@ export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Prop
           style={{ gap: 6 }}
         >
           {days.map((d) => {
-            const selected =
-              isThisMonth(d) && d.getDate() === selectedDay && sameMonthAsSelected(d, selectedDay);
-            const isToday = ymd(d) === todayKey;
-            const hasTask = isThisMonth(d) && (daysWithTasks?.has(d.getDate()) ?? false);
+            const iso = ymd(d);
+            const isSelected = iso === selected;
+            const isToday = iso === today;
+            const hasTask = datesWithTasks?.has(iso) ?? false;
             const letter = d.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1);
             return (
               <button
-                key={ymd(d)}
+                key={iso}
                 role="tab"
-                aria-selected={selected}
+                aria-selected={isSelected}
                 onClick={() => {
-                  // Selected uses day-of-month; jump the anchor's month if you tap
-                  // a day that's actually in a neighboring month.
                   setAnchor(d);
-                  onSelect(d.getDate());
+                  onSelect(iso);
                 }}
                 className="shrink-0 flex flex-col items-center justify-center"
                 style={{
                   width: 46,
                   height: 62,
                   borderRadius: 16,
-                  background: selected ? N.sageDeep : N.creamCard,
-                  color: selected ? N.cream : isToday ? N.sageDeep : N.ink,
-                  border: `1px solid ${selected ? "transparent" : isToday ? N.sageDeep : N.line}`,
+                  background: isSelected ? N.sageDeep : N.creamCard,
+                  color: isSelected ? N.cream : isToday ? N.sageDeep : N.ink,
+                  border: `1px solid ${isSelected ? "transparent" : isToday ? N.sageDeep : N.line}`,
                   transition: "background 0.18s ease, color 0.18s ease",
                   position: "relative",
                 }}
@@ -89,7 +77,7 @@ export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Prop
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    opacity: selected ? 0.75 : 0.65,
+                    opacity: isSelected ? 0.75 : 0.65,
                     letterSpacing: "0.04em",
                   }}
                 >
@@ -97,16 +85,11 @@ export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Prop
                 </span>
                 <span
                   className="font-display"
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    lineHeight: 1.1,
-                    marginTop: 4,
-                  }}
+                  style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.1, marginTop: 4 }}
                 >
                   {d.getDate()}
                 </span>
-                {hasTask && !selected && (
+                {hasTask && !isSelected && (
                   <span
                     aria-hidden="true"
                     style={{
@@ -129,13 +112,7 @@ export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Prop
           onClick={() => setAnchor(addDays(anchor, 7))}
           aria-label="Next week"
           className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 999,
-            background: "transparent",
-            color: N.inkSoft,
-          }}
+          style={{ width: 32, height: 32, borderRadius: 999, color: N.inkSoft }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -146,33 +123,10 @@ export default function WeekStrip({ selectedDay, onSelect, daysWithTasks }: Prop
   );
 }
 
-/* -------- helpers -------- */
-
-function ymd(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
-
-function addDays(d: Date, n: number) {
-  const x = new Date(d);
-  x.setDate(d.getDate() + n);
-  return x;
-}
-
+/** Monday-first 7-day window around the anchor date. */
 function buildWeek(anchor: Date): Date[] {
-  // Monday-first week. JS getDay() returns 0=Sun..6=Sat.
-  const day = anchor.getDay(); // 0..6
+  const day = anchor.getDay(); // 0=Sun..6=Sat
   const mondayOffset = (day + 6) % 7;
   const monday = addDays(anchor, -mondayOffset);
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-}
-
-function sameMonthAsSelected(d: Date, selectedDay: number) {
-  // We treat selectedDay as day-of-month in the current month. If the displayed
-  // pill belongs to a different month, it should not appear selected unless that
-  // month happens to share the same numeric day. Good-enough for the home view.
-  const today = new Date();
-  if (d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()) {
-    return d.getDate() === selectedDay;
-  }
-  return false;
 }

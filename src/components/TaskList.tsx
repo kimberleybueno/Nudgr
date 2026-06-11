@@ -6,26 +6,28 @@ import type { Task, Goal, Partner } from "@/types";
 import TaskRow from "./TaskRow";
 
 interface Props {
-  /** All tasks for the selected date (combined: standalone where due matches + goal tasks where due matches) */
+  /** All tasks for the selected date (combined: standalone where dueDate matches + goal tasks where dueDate matches) */
   tasks: Task[];
   goals: Goal[];
   partners: Partner[];
-  selectedDay: number;
+  /** ISO date string YYYY-MM-DD of the currently selected day. */
+  selectedDate: string;
   isToday: boolean;
-  /** Day label for non-today header e.g. "May 26" */
+  /** Day label for non-today header e.g. "June 14" or "Tomorrow" */
   dayLabel: string;
-  onAddStandalone: (text: string, due: number) => void;
+  onAddStandalone: (text: string, dueDate: string | null) => void;
   onUpdateTask: (t: Task) => void;
   onDeleteTask: (id: string) => void;
   onToggleTask: (id: string) => void;
   onReorder: (sourceId: string, targetIndex: number) => void;
   onCreateGoalAndLink?: (g: Goal, taskId: string) => void;
+  isDesktop?: boolean;
 }
 
 export default function TaskList({
-  tasks, goals, partners, selectedDay, isToday, dayLabel,
+  tasks, goals, partners, selectedDate, isToday, dayLabel,
   onAddStandalone, onUpdateTask, onDeleteTask, onToggleTask, onReorder,
-  onCreateGoalAndLink,
+  onCreateGoalAndLink, isDesktop,
 }: Props) {
   const [input, setInput] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
@@ -41,7 +43,7 @@ export default function TaskList({
   const handleAdd = () => {
     const v = input.trim();
     if (!v) return;
-    onAddStandalone(v, selectedDay);
+    onAddStandalone(v, selectedDate);
     setInput("");
   };
 
@@ -162,6 +164,7 @@ export default function TaskList({
             onUpdate={onUpdateTask}
             onDelete={onDeleteTask}
             onCreateGoalAndLink={onCreateGoalAndLink}
+            isDesktop={isDesktop}
             onHoldStart={handleHoldStart}
             onHoldMove={handleHoldMove}
             onHoldEnd={handleHoldEnd}
