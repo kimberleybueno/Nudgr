@@ -6,8 +6,9 @@ import type { Task, Goal, Partner, UserData } from "@/types";
 import { refreshOverdue } from "@/lib/overdue";
 import { calculateStreak, recordCompletion } from "@/lib/streak";
 
-import Hero from "./Hero";
-import Calendar from "./Calendar";
+import GreetingHeader from "./GreetingHeader";
+import WeekStrip from "./WeekStrip";
+import VoicePromo from "./VoicePromo";
 import TaskList from "./TaskList";
 import GoalGrid from "./GoalGrid";
 import Confetti, { type ConfettiTier } from "./Confetti";
@@ -265,20 +266,19 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     });
   };
 
-  const hero = (
-    <Hero
-      name={user.name}
-      todayPct={heroMetrics.pct}
-      doneToday={heroMetrics.done}
-      totalToday={heroMetrics.total}
-      streak={user.streak}
-      selectedDayLabel={todayLabelStr}
+  const header = (
+    <GreetingHeader name={user.name} onCreate={() => setGoalModal({ mode: "create" })} />
+  );
+
+  const weekStrip = (
+    <WeekStrip
+      selectedDay={selectedDay}
+      onSelect={setSelectedDay}
+      daysWithTasks={daysWithTasks}
     />
   );
 
-  const calendar = (
-    <Calendar selectedDay={selectedDay} onSelect={setSelectedDay} daysWithTasks={daysWithTasks} />
-  );
+  const voicePromo = <VoicePromo />;
 
   const taskList = (
     <TaskList
@@ -307,19 +307,15 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     />
   );
 
-  /* ---------- Desktop: 2-column body under a full-width hero ---------- */
+  /* ---------- Desktop: 2-column body under the greeting + week strip ---------- */
   if (isDesktop) {
     return (
       <div className="anim-up">
-        {hero}
+        {header}
+        {weekStrip}
         <div className="flex gap-6 px-4 pt-4 items-start">
-          <div className="flex-1 min-w-0">
-            {calendar}
-            {taskList}
-          </div>
-          <div className="w-[400px] shrink-0 sticky top-4">
-            {goalGrid}
-          </div>
+          <div className="flex-1 min-w-0">{taskList}</div>
+          <div className="w-[400px] shrink-0 sticky top-4">{goalGrid}</div>
         </div>
         <Confetti tier={confetti} onDone={() => setConfetti(null)} />
         {goalModal && (
@@ -334,12 +330,13 @@ export default function HomeTab({ user, setUser, isDesktop = false }: Props) {
     );
   }
 
-  /* ---------- Mobile: stacked single column ---------- */
+  /* ---------- Mobile: stacked single column. Voice promo between Today and Goals. ---------- */
   return (
     <div className="anim-up">
-      {hero}
-      {calendar}
+      {header}
+      {weekStrip}
       {taskList}
+      {voicePromo}
       {goalGrid}
       <Confetti tier={confetti} onDone={() => setConfetti(null)} />
       {goalModal && (

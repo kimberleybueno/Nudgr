@@ -1,5 +1,26 @@
 import type { Metadata, Viewport } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+
+/**
+ * Brand fonts per the Nudgr Design and Brand Kit v1.0:
+ *   Fraunces — display (screen/section/card titles, big numbers, italic emphasis)
+ *   Inter    — body, labels, chips, buttons, nav, lists (the working layer)
+ *
+ * Both loaded as variable fonts so any weight in the kit range works.
+ */
+const fraunces = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const inter = Inter({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Nudgr",
@@ -39,7 +60,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );
