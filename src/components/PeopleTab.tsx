@@ -62,11 +62,35 @@ export default function PeopleTab({
   const [showAddCircle, setShowAddCircle] = useState(false);
   const [showCreatePact, setShowCreatePact] = useState(false);
   const [inviteFallback, setInviteFallback] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  /**
+   * Nudge toast (sec 11). Two-phase so we can play the 0.20s exit before
+   * unmounting. `text` holds the visible string; `phase` drives the class.
+   */
+  const [toast, setToast] = useState<{ text: string; phase: "in" | "out" } | null>(null);
+
+  /**
+   * Wiggle target (sec 11). A personId for a single avatar, or the literal
+   * "crew" to wiggle every crew avatar at once. Cleared after 850ms so the
+   * single keyframe matches the animation length exactly.
+   */
+  const [wiggle, setWiggle] = useState<string | null>(null);
 
   const showToast = (text: string) => {
-    setToast(text);
-    setTimeout(() => setToast(null), 2000);
+    setToast({ text, phase: "in" });
+    // 220ms enter + ~1700ms hold = 1920ms before fade-out starts; total ~2120ms
+    window.setTimeout(() => {
+      setToast((cur) => (cur && cur.text === text ? { text, phase: "out" } : cur));
+    }, 1920);
+    window.setTimeout(() => {
+      setToast((cur) => (cur && cur.text === text ? null : cur));
+    }, 2120);
+  };
+
+  const playWiggle = (targetId: string) => {
+    setWiggle(targetId);
+    window.setTimeout(() => {
+      setWiggle((cur) => (cur === targetId ? null : cur));
+    }, 850);
   };
 
   const sortedPacts = useMemo(
@@ -147,10 +171,12 @@ export default function PeopleTab({
     // Look for a shared Pact to post the nudge into; otherwise it's a no-op visually
     const pact = pacts.find((p) => p.members.some((m) => m.name === personName));
     if (pact) {
-      postSystem(pact.id, `You nudged ${personName} — "${variant}"`);
+      // Quoted variant separated by a colon (no em dash, house rule).
+      postSystem(pact.id, `You nudged ${personName}: "${variant}"`);
     }
     setUser((u) => ({ ...u, lastNudgedAt: { ...u.lastNudgedAt, [personId]: new Date().toISOString() } }));
-    showToast("Nudge sent");
+    playWiggle(personId);
+    showToast(`Nudge sent to ${personName}`);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
   };
 
@@ -299,7 +325,8 @@ export default function PeopleTab({
                        active={isDesktop && activePartner === p.id}
                        onTap={() => { setActiveChat(null); setActivePartner(p.id); }}
                        onNudge={() => sendNudge(p.id, p.name)}
-                       canNudge={canNudge(p.id)} />
+                       canNudge={canNudge(p.id)}
+                       wiggling={wiggle === p.id || wiggle === "crew"} />
           ))}
           {circle.length === 0 && (
             <>
@@ -383,8 +410,23 @@ export default function PeopleTab({
                       fallbackOpen={inviteFallback}
                       onCloseFallback={() => setInviteFallback(false)} />
       {toast && (
-        <div className="fixed left-1/2 bottom-24 z-[110] px-4 py-2 rounded-full text-[12px] font-bold text-white anim-fade"
-             style={{ background: C.sageDark, transform: "translateX(-50%)" }}>{toast}</div>
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed left-1/2 z-[110] ${toast.phase === "in" ? "anim-toast-in" : "anim-toast-out"}`}
+          style={{
+            bottom: 88,                               // ~88px above the tab bar per sec 11
+            background: "#2F4A35",                    // --sage-darkest
+            color: "#F7F4EC",                         // --cream
+            fontSize: 13,
+            fontWeight: 500,
+            padding: "12px 20px",
+            borderRadius: 13,
+            boxShadow: "0 10px 30px -18px rgba(47, 74, 53, 0.40)",
+          }}
+        >
+          {toast.text}
+        </div>
       )}
     </>
   );
@@ -463,8 +505,10 @@ function PactRow({ pact, active, onTap, onLongPress }: { pact: Pact; active?: bo
   );
 }
 
-function CircleRow({ person, active, onTap, onNudge, canNudge }: {
+function CircleRow({ person, active, onTap, onNudge, canNudge, wiggling }: {
   person: CirclePerson; active?: boolean; onTap: () => void; onNudge: () => void; canNudge: boolean;
+  /** When true, plays the sec 11 nudge-wiggle on this avatar. */
+  wiggling?: boolean;
 }) {
   return (
     <button onClick={onTap}
@@ -474,8 +518,12 @@ function CircleRow({ person, active, onTap, onNudge, canNudge }: {
               border: `1px solid ${active ? C.warm : C.faint}`,
             }}>
       <div className="relative shrink-0">
-        <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-white text-[16px] font-bold"
-             style={{ background: person.color }}>{person.initial}</div>
+        <div
+          className={`w-[42px] h-[42px] rounded-full flex items-center justify-center text-white text-[16px] font-bold ${wiggling ? "anim-wiggle" : ""}`}
+          style={{ background: person.color }}
+        >
+          {person.initial}
+        </div>
         {person.online && (
           <div className="absolute bottom-0 right-0 rounded-full"
                style={{ width: 10, height: 10, background: "#4CAF50", border: "2px solid #fff" }} />
@@ -491,14 +539,14 @@ function CircleRow({ person, active, onTap, onNudge, canNudge }: {
         )}
       </div>
       <div className="text-right shrink-0">
-        <div className="text-[13px] font-extrabold" style={{ color: C.gold }}>🔥 {person.streak}</div>
+        <div className="text-[13px] font-extrabold" style={{ color: C.gold }}>{person.streak} day streak</div>
         <span onClick={(e) => { e.stopPropagation(); onNudge(); }}
               className="inline-block mt-1 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
               style={{
                 background: canNudge ? C.sage + "1f" : C.bg,
                 color: canNudge ? C.sage : C.muted,
               }}>
-          {canNudge ? "👋 Nudge" : "Nudged recently"}
+          {canNudge ? "Nudge" : "Nudged recently"}
         </span>
       </div>
     </button>

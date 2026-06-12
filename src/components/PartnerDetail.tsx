@@ -28,12 +28,17 @@ interface Props {
 
 export default function PartnerDetail({ person, onBack, onNudge, onMessage, canNudge = true, embedded = false }: Props) {
   const [justSent, setJustSent] = useState(false);
+  const [wiggle, setWiggle] = useState(false);
 
   const handleNudge = () => {
     if (!canNudge) return;
     onNudge();
     setJustSent(true);
-    setTimeout(() => setJustSent(false), 5000);
+    // Play the sec 11 nudge-wiggle on the big avatar.
+    setWiggle(false);
+    requestAnimationFrame(() => setWiggle(true));
+    window.setTimeout(() => setWiggle(false), 850);
+    window.setTimeout(() => setJustSent(false), 5000);
   };
 
   const disabled = !canNudge || justSent;
@@ -58,7 +63,7 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
         <div className="text-center">
           <div className="relative inline-block">
             <div
-              className="rounded-full flex items-center justify-center text-white text-[28px] font-bold"
+              className={`rounded-full flex items-center justify-center text-white text-[28px] font-bold ${wiggle ? "anim-wiggle" : ""}`}
               style={{ width: 72, height: 72, background: person.color }}
             >{person.initial}</div>
             {person.online && (
@@ -72,7 +77,7 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
           <div className="text-[12px]" style={{ color: C.muted }}>{person.status}</div>
 
           <div className="flex gap-4 justify-center mt-4">
-            <Stat value={`🔥 ${person.streak}`} label="Streak" color={C.gold} />
+            <Stat value={`${person.streak}`} label="Day streak" color={C.gold} />
             <Stat value="78%" label="This week" color={C.sage} />
             <Stat value={`${person.sharedGoals.length || 0}`} label="Shared goals" color={C.charcoal} />
           </div>
@@ -126,7 +131,7 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
             className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold text-white"
             style={{ background: disabled ? C.muted : C.sage, opacity: disabled ? 0.6 : 1 }}
           >
-            {justSent ? "Sent ✓" : !canNudge ? "Nudged recently" : "👋 Send Nudge"}
+            {justSent ? "Sent" : !canNudge ? "Nudged recently" : "Send a nudge"}
           </button>
           <button
             onClick={onMessage}
