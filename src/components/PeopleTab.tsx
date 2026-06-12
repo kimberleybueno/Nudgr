@@ -20,6 +20,12 @@ interface Props {
   user: UserData;
   setUser: React.Dispatch<React.SetStateAction<UserData>>;
   isDesktop?: boolean;
+  /**
+   * When set, render only that section's header and list. Used by the
+   * new sec 16 chrome where Pacts and Crew are separate tabs. Omit to
+   * render both stacked (legacy merged People view).
+   */
+  section?: "pacts" | "crew";
 }
 
 interface CirclePerson {
@@ -46,8 +52,11 @@ const NUDGE_WINDOW_MS = 60 * 60 * 1000; // 60 minutes
 
 export default function PeopleTab({
   pacts, setPacts, messages, setMessages, goals, goalPartners, userName,
-  user, setUser, isDesktop = false,
+  user, setUser, isDesktop = false, section,
 }: Props) {
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  // section is consumed inline below in the listColumn block.
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [activePartner, setActivePartner] = useState<string | null>(null);
   const [showAddCircle, setShowAddCircle] = useState(false);
@@ -214,13 +223,18 @@ export default function PeopleTab({
   }
 
   /* ---------- Shared list column (Pacts + Circle) ---------- */
+  const sectionTitle =
+    section === "pacts" ? "Pacts" :
+    section === "crew"  ? "Crew"  :
+    "People";
+
   const listColumn = (
     <>
       <div className="px-6 pt-12 lg:pt-6">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: C.muted }}>ACCOUNTABILITY</p>
-            <h1 className="text-[24px] font-light mt-1" style={{ color: C.charcoal }}>People</h1>
+            <h1 className="text-[24px] font-light mt-1" style={{ color: C.charcoal }}>{sectionTitle}</h1>
           </div>
           <button onClick={triggerInvite}
                   className="px-4 py-2 rounded-xl text-[12px] font-bold text-white"
@@ -229,6 +243,7 @@ export default function PeopleTab({
       </div>
 
       {/* Pacts */}
+      {(!section || section === "pacts") && (
       <section className="px-5 pt-5">
         <div className="flex items-center justify-between mb-2.5">
           <div className="text-[12px] font-bold tracking-wide" style={{ color: C.sage }}>Pacts</div>
@@ -257,12 +272,16 @@ export default function PeopleTab({
           )}
         </div>
       </section>
+      )}
 
-      <div className="px-5 my-3">
-        <div className="h-px" style={{ background: C.faint }} />
-      </div>
+      {!section && (
+        <div className="px-5 my-3">
+          <div className="h-px" style={{ background: C.faint }} />
+        </div>
+      )}
 
       {/* Circle */}
+      {(!section || section === "crew") && (
       <section className="px-5 pb-6">
         <div className="flex items-center justify-between mb-2.5">
           <div className="text-[12px] font-bold tracking-wide" style={{ color: C.warm }}>Circle</div>
@@ -299,6 +318,7 @@ export default function PeopleTab({
           )}
         </div>
       </section>
+      )}
     </>
   );
 

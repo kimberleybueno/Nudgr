@@ -5,19 +5,31 @@ import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { STORAGE_KEYS } from "@/lib/storage";
 import { EMPTY_USER, EMPTY_PACTS, EMPTY_MESSAGES } from "@/lib/seed";
-import type { TabId, UserData, Pact, Message, Goal } from "@/types";
+import { todayIso } from "@/lib/dates";
+import type { TabId, UserData, Pact, Message, Goal, Task } from "@/types";
 
 import BottomNav from "./BottomNav";
 import SideNav from "./SideNav";
 import HomeTab from "./HomeTab";
 import PeopleTab from "./PeopleTab";
 import SettingsTab from "./SettingsTab";
+import VoiceScreen from "./VoiceScreen";
 import OnboardingGate from "./OnboardingGate";
 import UpdateBanner from "./UpdateBanner";
 
+/**
+ * Top-level app shell.
+ *
+ * Tab structure follows handoff sec 16: Goals, Pacts, Speak (action),
+ * Crew, You. Speak opens the VoiceScreen instead of switching tabs.
+ *
+ * Pacts and Crew both currently render PeopleTab with a `section` prop;
+ * once Pact chat (sec 12) lands, each tab will own a dedicated component.
+ */
 export default function Shell() {
   const { isDesktop } = useBreakpoint();
-  const [tab, setTab] = useState<TabId>("home");
+  const [tab, setTab] = useState<TabId>("goals");
+  const [speakOpen, setSpeakOpen] = useState(false);
 
   const [user, setUser] = useLocalStorage<UserData>(STORAGE_KEYS.user, EMPTY_USER);
   const [pacts, setPacts]       = useLocalStorage<Pact[]>(STORAGE_KEYS.pacts, EMPTY_PACTS);
@@ -44,30 +56,60 @@ export default function Shell() {
     });
   };
 
+  // Speak typed fallback: append a standalone to-do dated today.
+  const addStandaloneFromSpeak = (text: string) => {
+    const newTask: Task = {
+      id: `t_${Math.random().toString(36).slice(2, 8)}`,
+      text,
+      done: false,
+      star: false,
+      overdue: false,
+      goalId: null,
+      partnerId: null,
+      dueDate: todayIso(),
+      recurring: null,
+      createdAt: todayIso(),
+    };
+    setUser((u) => ({ ...u, tasks: [newTask, ...u.tasks] }));
+    setTab("goals");
+  };
+
   // Gate: until onboarded, show the OnboardingGate over everything.
   if (!user.onboardedAt) {
     return <OnboardingGate onComplete={completeOnboarding} />;
   }
 
+  const userInitial = (user.name?.[0] ?? "?").toUpperCase();
+
   return (
     <div className="min-h-screen" style={{ background: "#F4F8F4" }}>
       <UpdateBanner />
 
-      {isDesktop && <SideNav active={tab} onChange={setTab} />}
+      {isDesktop && (
+        <SideNav
+          active={tab}
+          onChange={setTab}
+          onSpeak={() => setSpeakOpen(true)}
+          userName={user.name}
+          userInitial={userInitial}
+          streak={user.streak ?? 0}
+        />
+      )}
 
-      <div className="lg:pl-[72px]">
+      <div style={{ paddingLeft: isDesktop ? 258 : 0 }}>
         <main
           className="w-full mx-auto"
           style={{
             maxWidth: isDesktop ? 1200 : 460,
-            paddingBottom: isDesktop ? 0 : 88,
+            paddingBottom: isDesktop ? 0 : 96,
             minHeight: "100vh",
           }}
         >
-          {tab === "home" && <HomeTab user={user} setUser={setUser} isDesktop={isDesktop} />}
+          {tab === "goals" && <HomeTab user={user} setUser={setUser} isDesktop={isDesktop} />}
 
-          {tab === "people" && (
+          {tab === "pacts" && (
             <PeopleTab
+              section="pacts"
               pacts={pacts}
               setPacts={setPacts}
               messages={messages}
@@ -81,7 +123,23 @@ export default function Shell() {
             />
           )}
 
-          {tab === "settings" && (
+          {tab === "crew" && (
+            <PeopleTab
+              section="crew"
+              pacts={pacts}
+              setPacts={setPacts}
+              messages={messages}
+              setMessages={setMessages}
+              goals={user.goals}
+              goalPartners={user.partners}
+              userName={user.name}
+              user={user}
+              setUser={setUser}
+              isDesktop={isDesktop}
+            />
+          )}
+
+          {tab === "you" && (
             <SettingsTab
               user={user}
               setUser={setUser}
@@ -92,7 +150,21 @@ export default function Shell() {
         </main>
       </div>
 
-      {!isDesktop && <BottomNav active={tab} onChange={setTab} />}
+      {!isDesktop && (
+        <BottomNav
+          active={tab}
+          onChange={setTab}
+          onSpeak={() => setSpeakOpen(true)}
+        />
+      )}
+
+      {speakOpen && (
+        <VoiceScreen
+          onClose={() => setSpeakOpen(false)}
+          onAddTypedTodo={addStandaloneFromSpeak}
+          isDesktop={isDesktop}
+        />
+      )}
     </div>
   );
 }

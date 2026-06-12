@@ -63,7 +63,12 @@ export interface UserData {
   lastNudgedAt: Record<string, string>;
 }
 
-export type TabId = "home" | "people" | "settings";
+/**
+ * Tab structure per the handoff sec 16 (5 visual items in the bottom nav).
+ * "speak" is an action that opens the Voice screen, not a persistent tab,
+ * so the persistent tab states are these four.
+ */
+export type TabId = "goals" | "pacts" | "crew" | "you";
 export type GoalFilter = "all" | "short" | "long";
 
 /* =========================================================================

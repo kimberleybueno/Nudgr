@@ -19,6 +19,11 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
   const editing = !!goal;
 
   const [name, setName] = useState(goal?.name ?? "");
+  /**
+   * Optional "why" statement that powers the WHY card on Goal detail.
+   * Empty string saves as undefined so the card stays hidden.
+   */
+  const [why, setWhy] = useState(goal?.why ?? "");
   const [emoji, setEmoji] = useState(goal?.emoji ?? "🎯");
   const [type, setType] = useState<"short" | "long">(() => {
     if (!goal?.deadlineDate) return "short";
@@ -44,6 +49,7 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
       ? new Date(targetDate).toLocaleString(undefined, { month: "short", year: "numeric" })
       : "";
 
+    const trimmedWhy = why.trim();
     const updated: Goal = {
       id,
       emoji,
@@ -52,6 +58,7 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
       deadline,
       deadlineDate: targetDate,
       tasks: goal?.tasks ?? [],
+      ...(trimmedWhy ? { why: trimmedWhy } : {}),
     };
     onSave(updated);
   };
@@ -93,6 +100,31 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
                  className="flex-1 h-14 px-4 rounded-2xl text-[15px] font-semibold outline-none"
                  style={{ background: C.bg, border: `1.5px solid ${name ? C.warm : C.faint}`, color: C.charcoal }} />
         </div>
+
+        {/* Your why (optional) — feeds the WHY card on Goal detail */}
+        <label className="block mb-3.5">
+          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>
+            YOUR WHY <span className="font-normal" style={{ textTransform: "lowercase" }}>· optional</span>
+          </span>
+          <textarea
+            value={why}
+            onChange={(e) => setWhy(e.target.value)}
+            maxLength={200}
+            rows={2}
+            placeholder="The reason it matters. One short sentence."
+            className="font-display w-full px-4 py-3 rounded-xl outline-none"
+            style={{
+              background: "rgba(196, 169, 138, 0.14)",
+              border: "1px solid rgba(196, 169, 138, 0.22)",
+              color: "#36352F",
+              fontSize: 14.5,
+              fontStyle: "italic",
+              lineHeight: 1.45,
+              resize: "vertical",
+              minHeight: 64,
+            }}
+          />
+        </label>
 
         {/* Type */}
         <div className="mb-3.5">
