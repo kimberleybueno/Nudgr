@@ -154,6 +154,26 @@ export default function PeopleTab({
     setPacts((cur) => cur.map((p) => (p.id === pactId ? { ...p, checkInBannerDismissed: true } : p)));
   };
 
+  /** Sec 12 tan nudge quick-action. Posts a nudge-event row and fires Sec 11 motion. */
+  const sendCrewNudge = (pactId: string) => {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const variant = NUDGE_VARIANTS[Math.floor(Math.random() * NUDGE_VARIANTS.length)];
+    setMessages((cur) => [...cur, {
+      id: Date.now(), pactId,
+      user: "me",
+      name: userName || "You",
+      ini: (userName?.[0] ?? "Y").toUpperCase(),
+      text: "You nudged the crew",
+      detail: variant,
+      time,
+      type: "nudge",
+    }]);
+    setPacts((cur) => cur.map((p) => (p.id === pactId ? { ...p, last: "You nudged the crew", time } : p)));
+    playWiggle("crew");
+    showToast("Nudge sent to the crew");
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+  };
+
   /* ---------- Nudge with rate limit ---------- */
 
   const canNudge = (personId: string) => {
@@ -223,10 +243,12 @@ export default function PeopleTab({
           pact={pact}
           messages={messages.filter((m) => m.pactId === activeChat)}
           userName={userName}
+          userInitial={(userName?.[0] ?? "Y").toUpperCase()}
           onBack={() => { markRead(activeChat); setActiveChat(null); }}
           onSend={(text) => sendMessage(activeChat, text)}
-          onPostSystem={(text) => postSystem(activeChat, text)}
+          onCrewNudge={() => sendCrewNudge(activeChat)}
           onDismissBanner={() => dismissCheckinBanner(activeChat)}
+          crewWiggling={wiggle === "crew"}
         />
       );
     }
@@ -359,10 +381,12 @@ export default function PeopleTab({
         pact={activePact}
         messages={messages.filter((m) => m.pactId === activePact.id)}
         userName={userName}
+        userInitial={(userName?.[0] ?? "Y").toUpperCase()}
         onBack={() => setActiveChat(null)}
         onSend={(text) => sendMessage(activePact.id, text)}
-        onPostSystem={(text) => postSystem(activePact.id, text)}
+        onCrewNudge={() => sendCrewNudge(activePact.id)}
         onDismissBanner={() => dismissCheckinBanner(activePact.id)}
+        crewWiggling={wiggle === "crew"}
       />
     );
     if (activePerson) return (

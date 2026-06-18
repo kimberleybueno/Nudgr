@@ -107,11 +107,19 @@ button, input, textarea, select { font-family: inherit; }
 .anim-toast-in  { animation: nudge-toast-in  0.22s ease-out both; }
 .anim-toast-out { animation: nudge-toast-out 0.20s ease-in  both; }
 
+/* Pact chat: each new bubble fades + translates in over ~200ms. */
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.anim-bubble-in { animation: bubble-in 0.2s ease-out both; }
+
 /* Reduced motion: skip the wiggle and the toast translate, keep end states. */
 @media (prefers-reduced-motion: reduce) {
   .anim-wiggle    { animation: none !important; }
   .anim-toast-in  { animation: none !important; opacity: 1 !important; transform: translateX(-50%) !important; }
   .anim-toast-out { animation: none !important; opacity: 0 !important; transform: translateX(-50%) !important; }
+  .anim-bubble-in { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
 
 /* safe area helpers for iOS PWA */

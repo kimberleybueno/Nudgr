@@ -111,10 +111,26 @@ export interface Pact {
   checkInBannerDismissed?: boolean;
 }
 
+/**
+ * Pact chat message types (handoff sec 12). All five render inline in
+ * one timeline, newest at the bottom.
+ *
+ *   msg          — bubble. "me" right (sage-deep), others left (cream-card)
+ *   checkin      — cream-card row with sage-tint-14 left accent + italic note
+ *   progress     — centered card with mini sage progress ring
+ *   nudge        — inline ReceivedNudgeBanner (sage-darkest, wiggling avatar)
+ *   system/meta  — centered ink-faint 12px line, no bubble
+ *   date         — centered date separator pill (kept for back-compat)
+ *
+ * The older `goal_created`/`meeting` types are kept so existing local
+ * messages round-trip; they render as system meta.
+ */
 export type MessageType =
   | "msg"
   | "system"
   | "checkin"
+  | "progress"
+  | "nudge"
   | "goal_created"
   | "meeting"
   | "date";
@@ -130,4 +146,10 @@ export interface Message {
   ini?: string;
   col?: string;
   name?: string;
+  /** progress: percentage 0-100 to show in the mini ring. */
+  pct?: number;
+  /** checkin: optional Fraunces-italic follow-on line. */
+  note?: string;
+  /** nudge: optional warm follow-on italic line (rendered in tan-soft). */
+  detail?: string;
 }
