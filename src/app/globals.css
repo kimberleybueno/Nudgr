@@ -114,12 +114,20 @@ button, input, textarea, select { font-family: inherit; }
 }
 .anim-bubble-in { animation: bubble-in 0.2s ease-out both; }
 
+/* Voice capture (sec 8): concentric pulse rings radiating off the mic. */
+@keyframes voice-ring {
+  0%   { transform: scale(1);   opacity: 0.4; }
+  100% { transform: scale(1.8); opacity: 0;   }
+}
+.anim-voice-ring { animation: voice-ring 1.6s ease-out infinite; }
+
 /* Reduced motion: skip the wiggle and the toast translate, keep end states. */
 @media (prefers-reduced-motion: reduce) {
   .anim-wiggle    { animation: none !important; }
   .anim-toast-in  { animation: none !important; opacity: 1 !important; transform: translateX(-50%) !important; }
   .anim-toast-out { animation: none !important; opacity: 0 !important; transform: translateX(-50%) !important; }
-  .anim-bubble-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .anim-bubble-in   { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .anim-voice-ring  { animation: none !important; opacity: 0 !important; }
 }
 
 /* safe area helpers for iOS PWA */
