@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { C } from "@/lib/colors";
 import type { Pact, Message, Goal, Partner, UserData } from "@/types";
 import PactChat from "./PactChat";
+import PactDetail from "./PactDetail";
 import PartnerDetail from "./PartnerDetail";
 import AddToCircleModal from "./AddToCircleModal";
 import CreatePactModal from "./CreatePactModal";
@@ -57,7 +58,19 @@ export default function PeopleTab({
   /* eslint-disable @typescript-eslint/no-unused-vars */
   // section is consumed inline below in the listColumn block.
   /* eslint-enable @typescript-eslint/no-unused-vars */
-  const [activeChat, setActiveChat] = useState<string | null>(null);
+  /**
+   * Single source of truth for the currently focused Pact + which view.
+   *   { id, mode: "detail" } — show PactDetail (sec 10)
+   *   { id, mode: "chat" }   — show PactChat (sec 12)
+   *   null                   — show the Pacts list
+   *
+   * Tap a PactRow → detail. Detail "Open chat" → chat. Chat back → detail.
+   * Detail back → list.
+   */
+  const [activePactView, setActivePactView] = useState<{ id: string; mode: "detail" | "chat" } | null>(null);
+  const activeChatId = activePactView?.mode === "chat" ? activePactView.id : null;
+  const activeDetailId = activePactView?.mode === "detail" ? activePactView.id : null;
+  const activePactId = activePactView?.id ?? null;
   const [activePartner, setActivePartner] = useState<string | null>(null);
   const [showAddCircle, setShowAddCircle] = useState(false);
   const [showCreatePact, setShowCreatePact] = useState(false);
@@ -174,6 +187,55 @@ export default function PeopleTab({
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
   };
 
+  /**
+   * Per-member nudge from inside Pact detail. Uses a synthetic personId
+   * (pactId + member name) for the 60-min rate limit so the same person
+   * can be nudged independently in different Pacts (matches user intent).
+   */
+  const sendPactMemberNudge = (pactId: string, memberName: string) => {
+    const synthId = `pact:${pactId}:${memberName}`;
+    if (!canNudge(synthId)) {
+      showToast("Nudged recently");
+      return;
+    }
+    const variant = NUDGE_VARIANTS[Math.floor(Math.random() * NUDGE_VARIANTS.length)];
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setMessages((cur) => [...cur, {
+      id: Date.now(), pactId,
+      user: "me",
+      name: userName || "You",
+      ini: (userName?.[0] ?? "Y").toUpperCase(),
+      text: `You nudged ${memberName}`,
+      detail: variant,
+      time,
+      type: "nudge",
+    }]);
+    setUser((u) => ({ ...u, lastNudgedAt: { ...u.lastNudgedAt, [synthId]: new Date().toISOString() } }));
+    playWiggle(memberName);
+    showToast(`Nudge sent to ${memberName}`);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(10);
+  };
+
+  /**
+   * Cheap demo metric for the Pact detail hero ring. Counts unique days
+   * in the last 7 days that any message landed in this Pact, divided by 7.
+   * Real check-in math lands when sec 10's optional week strip is built.
+   */
+  const computeWeeklyPct = (pactId: string): number => {
+    const sevenDaysMs = 7 * 86400000;
+    const now = Date.now();
+    const days = new Set<string>();
+    for (const m of messages) {
+      if (m.pactId !== pactId) continue;
+      if (m.type !== "msg" && m.type !== "checkin" && m.type !== "nudge") continue;
+      // Messages only carry a time string, not a date. Use id (ms timestamp) as a proxy.
+      if (now - m.id > sevenDaysMs) continue;
+      const d = new Date(m.id);
+      days.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    }
+    return Math.round((days.size / 7) * 100);
+  };
+
   /* ---------- Nudge with rate limit ---------- */
 
   const canNudge = (personId: string) => {
@@ -221,7 +283,7 @@ export default function PeopleTab({
       type: "system",
     }]);
     setShowCreatePact(false);
-    setActiveChat(pact.id);
+    setActivePactView({ id: pact.id, mode: "detail" });
   };
 
   /* ---------- Invite ---------- */
@@ -233,21 +295,41 @@ export default function PeopleTab({
     }
   };
 
-  /* ---------- Mobile: full-screen takeover ---------- */
+  /* ---------- Mobile: full-screen takeovers (detail or chat) ---------- */
   if (!isDesktop) {
-    if (activeChat) {
-      const pact = pacts.find((p) => p.id === activeChat);
-      if (!pact) { setActiveChat(null); return null; }
+    if (activeDetailId) {
+      const pact = pacts.find((p) => p.id === activeDetailId);
+      if (!pact) { setActivePactView(null); return null; }
+      return (
+        <PactDetail
+          pact={pact}
+          messages={messages.filter((m) => m.pactId === activeDetailId)}
+          userName={userName}
+          userStreak={user.streak ?? 0}
+          weeklyPct={computeWeeklyPct(activeDetailId)}
+          crewWiggling={wiggle === "crew"}
+          wigglingMemberId={wiggle && wiggle !== "crew" ? wiggle : null}
+          onBack={() => { markRead(activeDetailId); setActivePactView(null); }}
+          onOpenChat={() => setActivePactView({ id: activeDetailId, mode: "chat" })}
+          onCrewNudge={() => sendCrewNudge(activeDetailId)}
+          onNudgeMember={(name) => sendPactMemberNudge(activeDetailId, name)}
+          canNudgeMember={(name) => canNudge(`pact:${activeDetailId}:${name}`)}
+        />
+      );
+    }
+    if (activeChatId) {
+      const pact = pacts.find((p) => p.id === activeChatId);
+      if (!pact) { setActivePactView(null); return null; }
       return (
         <PactChat
           pact={pact}
-          messages={messages.filter((m) => m.pactId === activeChat)}
+          messages={messages.filter((m) => m.pactId === activeChatId)}
           userName={userName}
           userInitial={(userName?.[0] ?? "Y").toUpperCase()}
-          onBack={() => { markRead(activeChat); setActiveChat(null); }}
-          onSend={(text) => sendMessage(activeChat, text)}
-          onCrewNudge={() => sendCrewNudge(activeChat)}
-          onDismissBanner={() => dismissCheckinBanner(activeChat)}
+          onBack={() => { markRead(activeChatId); setActivePactView({ id: activeChatId, mode: "detail" }); }}
+          onSend={(text) => sendMessage(activeChatId, text)}
+          onCrewNudge={() => sendCrewNudge(activeChatId)}
+          onDismissBanner={() => dismissCheckinBanner(activeChatId)}
           crewWiggling={wiggle === "crew"}
         />
       );
@@ -263,7 +345,7 @@ export default function PeopleTab({
           canNudge={canNudge(person.id)}
           onMessage={() => {
             const pact = pacts.find((p) => p.members.some((m) => m.name === person.name));
-            if (pact) { setActivePartner(null); setActiveChat(pact.id); }
+            if (pact) { setActivePartner(null); setActivePactView({ id: pact.id, mode: "chat" }); }
           }}
         />
       );
@@ -306,8 +388,8 @@ export default function PeopleTab({
         <div className="flex flex-col gap-1.5">
           {sortedPacts.map((pact) => (
             <PactRow key={pact.id} pact={pact}
-                     active={isDesktop && activeChat === pact.id}
-                     onTap={() => { setActivePartner(null); setActiveChat(pact.id); markRead(pact.id); }}
+                     active={isDesktop && activePactId === pact.id}
+                     onTap={() => { setActivePartner(null); setActivePactView({ id: pact.id, mode: "detail" }); markRead(pact.id); }}
                      onLongPress={() => togglePin(pact.id)} />
           ))}
           {sortedPacts.length === 0 && (
@@ -345,7 +427,7 @@ export default function PeopleTab({
           {circle.map((p) => (
             <CircleRow key={p.id} person={p}
                        active={isDesktop && activePartner === p.id}
-                       onTap={() => { setActiveChat(null); setActivePartner(p.id); }}
+                       onTap={() => { setActivePactView(null); setActivePartner(p.id); }}
                        onNudge={() => sendNudge(p.id, p.name)}
                        canNudge={canNudge(p.id)}
                        wiggling={wiggle === p.id || wiggle === "crew"} />
@@ -373,22 +455,42 @@ export default function PeopleTab({
 
   /* ---------- Desktop master-detail ---------- */
   const detailColumn = (() => {
-    const activePact = activeChat ? pacts.find((p) => p.id === activeChat) ?? null : null;
+    const activePact = activePactId ? pacts.find((p) => p.id === activePactId) ?? null : null;
     const activePerson = activePartner ? circle.find((c) => c.id === activePartner) ?? null : null;
-    if (activePact) return (
+
+    if (activePact && activeDetailId) return (
+      <PactDetail
+        embedded
+        pact={activePact}
+        messages={messages.filter((m) => m.pactId === activePact.id)}
+        userName={userName}
+        userStreak={user.streak ?? 0}
+        weeklyPct={computeWeeklyPct(activePact.id)}
+        crewWiggling={wiggle === "crew"}
+        wigglingMemberId={wiggle && wiggle !== "crew" ? wiggle : null}
+        onBack={() => setActivePactView(null)}
+        onOpenChat={() => setActivePactView({ id: activePact.id, mode: "chat" })}
+        onCrewNudge={() => sendCrewNudge(activePact.id)}
+        onNudgeMember={(name) => sendPactMemberNudge(activePact.id, name)}
+        canNudgeMember={(name) => canNudge(`pact:${activePact.id}:${name}`)}
+      />
+    );
+
+    if (activePact && activeChatId) return (
       <PactChat
         embedded
         pact={activePact}
         messages={messages.filter((m) => m.pactId === activePact.id)}
         userName={userName}
         userInitial={(userName?.[0] ?? "Y").toUpperCase()}
-        onBack={() => setActiveChat(null)}
+        onBack={() => setActivePactView({ id: activePact.id, mode: "detail" })}
         onSend={(text) => sendMessage(activePact.id, text)}
         onCrewNudge={() => sendCrewNudge(activePact.id)}
         onDismissBanner={() => dismissCheckinBanner(activePact.id)}
         crewWiggling={wiggle === "crew"}
       />
     );
+
     if (activePerson) return (
       <PartnerDetail
         embedded
@@ -398,7 +500,7 @@ export default function PeopleTab({
         canNudge={canNudge(activePerson.id)}
         onMessage={() => {
           const pact = pacts.find((p) => p.members.some((m) => m.name === activePerson.name));
-          if (pact) { setActivePartner(null); setActiveChat(pact.id); }
+          if (pact) { setActivePartner(null); setActivePactView({ id: pact.id, mode: "chat" }); }
         }}
       />
     );
