@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 
 interface Props {
   userName: string;
@@ -62,19 +62,19 @@ export default function InviteFallback({ userName, fallbackOpen, onCloseFallback
       <div onClick={(e) => e.stopPropagation()}
            className="w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-3xl p-5 anim-slide-up">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[15px] font-bold" style={{ color: C.sageDark }}>Share Nudgr</div>
-          <button onClick={onCloseFallback} className="text-base" style={{ color: C.muted }}>×</button>
+          <div className="text-[15px] font-bold" style={{ color: N.sageDeep }}>Share Nudgr</div>
+          <button onClick={onCloseFallback} className="text-base" style={{ color: N.inkSoft }}>×</button>
         </div>
         <input readOnly value={url}
                className="w-full px-3 py-2.5 rounded-xl text-[12px] font-mono outline-none mb-2"
-               style={{ background: C.bg, border: `1px solid ${C.faint}`, color: C.charcoal }} />
+               style={{ background: N.cream, border: `1px solid ${N.line}`, color: N.ink }} />
         <button onClick={copy}
                 className="w-full h-11 rounded-xl text-[13px] font-bold text-white mb-2"
-                style={{ background: C.sage }}>
+                style={{ background: N.sage }}>
           {copied ? "Copied ✓" : "Copy link"}
         </button>
         <a href={`mailto:?subject=${encodeURIComponent("Join me on Nudgr")}&body=${encodeURIComponent("I'm using Nudgr to stay accountable. Want to nudge me?\n\n" + url)}`}
-           className="block text-center text-[12px] font-bold py-2" style={{ color: C.muted }}>
+           className="block text-center text-[12px] font-bold py-2" style={{ color: N.inkSoft }}>
           Or share by email
         </a>
       </div>

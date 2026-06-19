@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, GOAL_COLORS } from "@/lib/colors";
+import { N, GOAL_COLORS } from "@/lib/colors";
 import type { Goal } from "@/types";
 
 interface Props {
@@ -70,13 +70,13 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
            className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto anim-slide-up">
 
         <div className="flex items-center justify-between mb-1">
-          <button onClick={onCancel} className="text-[12px] font-bold" style={{ color: C.muted }}>Cancel</button>
+          <button onClick={onCancel} className="text-[12px] font-bold" style={{ color: N.inkSoft }}>Cancel</button>
           <button onClick={save} disabled={!nameValid}
                   className="text-[12px] font-bold disabled:opacity-40"
-                  style={{ color: C.sageDark }}>{editing ? "Save" : "Create"}</button>
+                  style={{ color: N.sageDeep }}>{editing ? "Save" : "Create"}</button>
         </div>
 
-        <h2 className="text-[18px] font-bold mb-4" style={{ color: C.sageDark }}>
+        <h2 className="text-[18px] font-bold mb-4" style={{ color: N.sageDeep }}>
           {editing ? "Edit goal" : "New goal"}
         </h2>
 
@@ -84,26 +84,26 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
         <div className="flex gap-3 mb-4">
           <details className="relative">
             <summary className="list-none cursor-pointer w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
-                     style={{ background: C.bg, border: `1.5px solid ${C.faint}` }}>{emoji}</summary>
+                     style={{ background: N.cream, border: `1.5px solid ${N.line}` }}>{emoji}</summary>
             <div className="absolute z-20 mt-2 grid grid-cols-8 gap-1 p-2 rounded-2xl bg-white shadow-xl"
-                 style={{ border: `1px solid ${C.faint}`, width: 280 }}>
+                 style={{ border: `1px solid ${N.line}`, width: 280 }}>
               {EMOJI_OPTS.map((e) => (
                 <button key={e} type="button"
                         onClick={() => { setEmoji(e); (document.activeElement as HTMLElement)?.blur(); }}
                         className="w-8 h-8 rounded-lg text-xl"
-                        style={{ background: emoji === e ? C.light : "transparent" }}>{e}</button>
+                        style={{ background: emoji === e ? N.sageTint14 : "transparent" }}>{e}</button>
               ))}
             </div>
           </details>
           <input autoFocus={!editing} value={name} onChange={(e) => setName(e.target.value)}
                  maxLength={60} placeholder="Marathon Training"
                  className="flex-1 h-14 px-4 rounded-2xl text-[15px] font-semibold outline-none"
-                 style={{ background: C.bg, border: `1.5px solid ${name ? C.warm : C.faint}`, color: C.charcoal }} />
+                 style={{ background: N.cream, border: `1.5px solid ${name ? N.tan : N.line}`, color: N.ink }} />
         </div>
 
         {/* Your why (optional) — feeds the WHY card on Goal detail */}
         <label className="block mb-3.5">
-          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>
+          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>
             YOUR WHY <span className="font-normal" style={{ textTransform: "lowercase" }}>· optional</span>
           </span>
           <textarea
@@ -128,15 +128,15 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
 
         {/* Type */}
         <div className="mb-3.5">
-          <div className="text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>TYPE</div>
+          <div className="text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>TYPE</div>
           <div className="flex gap-1.5">
             {(["short", "long"] as const).map((t) => (
               <button key={t} onClick={() => setType(t)}
                       className="flex-1 h-10 rounded-xl text-[12px] font-bold capitalize"
                       style={{
-                        background: type === t ? C.sage : C.bg,
-                        color: type === t ? "#fff" : C.muted,
-                        border: `1px solid ${type === t ? C.sage : C.faint}`,
+                        background: type === t ? N.sage : N.cream,
+                        color: type === t ? "#fff" : N.inkSoft,
+                        border: `1px solid ${type === t ? N.sage : N.line}`,
                       }}>{t === "short" ? "Short-term" : "Long-term"}</button>
             ))}
           </div>
@@ -144,17 +144,17 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
 
         {/* Target date */}
         <label className="block mb-3.5">
-          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>
+          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>
             TARGET DATE <span className="font-normal" style={{ textTransform: "lowercase" }}>· optional</span>
           </span>
           <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)}
                  className="w-full px-4 py-3 rounded-xl text-[14px] outline-none"
-                 style={{ background: C.bg, border: `1.5px solid ${C.faint}`, color: C.charcoal }} />
+                 style={{ background: N.cream, border: `1.5px solid ${N.line}`, color: N.ink }} />
         </label>
 
         {/* Color */}
         <div className="mb-3.5">
-          <div className="text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>COLOR</div>
+          <div className="text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>COLOR</div>
           <div className="flex gap-2">
             {GOAL_COLORS.map((c) => (
               <button key={c} onClick={() => setColor(c)}
@@ -172,8 +172,8 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
         {/* Progress */}
         <div className="mb-3.5">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[11px] font-bold tracking-wide" style={{ color: C.muted }}>PROGRESS</div>
-            <div className="text-[12px] font-bold" style={{ color: C.sage }}>{progress}%</div>
+            <div className="text-[11px] font-bold tracking-wide" style={{ color: N.inkSoft }}>PROGRESS</div>
+            <div className="text-[12px] font-bold" style={{ color: N.sage }}>{progress}%</div>
           </div>
           <input type="range" min={0} max={100} value={progress}
                  onChange={(e) => setProgress(parseInt(e.target.value, 10))}
@@ -185,23 +185,23 @@ export default function CreateGoalModal({ goal, onCancel, onSave, onDelete }: Pr
           <>
             {confirming ? (
               <div className="rounded-xl p-3 mt-4"
-                   style={{ background: C.urgent + "0d", border: `1px solid ${C.urgent}55` }}>
-                <div className="text-[12px] font-semibold mb-2" style={{ color: C.charcoal }}>
+                   style={{ background: "#A8483A" + "0d", border: `1px solid ${"#A8483A"}55` }}>
+                <div className="text-[12px] font-semibold mb-2" style={{ color: N.ink }}>
                   Delete &ldquo;{goal.name}&rdquo;? Its tasks will stay but become unlinked.
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setConfirming(false)}
                           className="flex-1 h-9 rounded-lg text-[12px] font-bold"
-                          style={{ background: C.bg, color: C.charcoal, border: `1px solid ${C.faint}` }}>Cancel</button>
+                          style={{ background: N.cream, color: N.ink, border: `1px solid ${N.line}` }}>Cancel</button>
                   <button onClick={() => onDelete(goal.id)}
                           className="flex-1 h-9 rounded-lg text-[12px] font-bold text-white"
-                          style={{ background: C.urgent }}>Delete</button>
+                          style={{ background: "#A8483A" }}>Delete</button>
                 </div>
               </div>
             ) : (
               <button onClick={() => setConfirming(true)}
                       className="w-full h-11 rounded-xl text-[13px] font-bold mt-3"
-                      style={{ color: C.urgent, background: C.urgent + "0d", border: `1px solid ${C.urgent}33` }}>
+                      style={{ color: "#A8483A", background: "#A8483A" + "0d", border: `1px solid ${"#A8483A"}33` }}>
                 Delete goal
               </button>
             )}

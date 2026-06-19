@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 
 /**
  * Detects a waiting Service Worker (new version ready) and shows a sticky banner.
@@ -46,21 +46,21 @@ export default function UpdateBanner() {
   return (
     <div
       className="fixed top-0 left-0 right-0 z-[120] flex items-center gap-2 px-4 pt-safe"
-      style={{ background: C.warm + "f0", borderBottom: `1px solid ${C.faint}`, paddingTop: 14, paddingBottom: 10 }}
+      style={{ background: N.tan + "f0", borderBottom: `1px solid ${N.line}`, paddingTop: 14, paddingBottom: 10 }}
     >
-      <div className="flex-1 text-[12px] font-semibold" style={{ color: C.sageDark }}>
+      <div className="flex-1 text-[12px] font-semibold" style={{ color: N.sageDeep }}>
         A new version is ready.
       </div>
       <button
         onClick={refresh}
         className="px-3 h-8 rounded-lg text-[11px] font-bold text-white"
-        style={{ background: C.sage }}
+        style={{ background: N.sage }}
       >Refresh</button>
       <button
         onClick={() => setDismissed(true)}
         aria-label="Dismiss"
         className="w-7 h-7 flex items-center justify-center text-base"
-        style={{ color: C.charcoal }}
+        style={{ color: N.ink }}
       >×</button>
     </div>
   );

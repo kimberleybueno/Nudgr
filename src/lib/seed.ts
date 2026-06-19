@@ -195,10 +195,23 @@ export const SAMPLE_PACTS: Pact[] = [
 
 export const SAMPLE_MESSAGES: Message[] = [
   { id: 1, pactId: "p1", user: "system", text: "Today", time: "", type: "date" },
-  { id: 2, pactId: "p1", user: "Maya", ini: "M", col: "#C4A98A", name: "Maya", text: "Morning! Ready for the 5k?", time: "8:12", type: "msg", read: true },
-  { id: 3, pactId: "p1", user: "me", text: "About to head out 🏃‍♀️", time: "8:14", type: "msg", read: true },
-  { id: 4, pactId: "p1", user: "system", text: "Maya completed today's run — 4 day streak 🔥", time: "8:55", type: "system" },
-  { id: 5, pactId: "p1", user: "Maya", ini: "M", col: "#C4A98A", name: "Maya", text: "Crushing it today 💪", time: "9:42", type: "msg", read: false },
-  { id: 6, pactId: "p2", user: "system", text: "Yesterday", time: "", type: "date" },
-  { id: 7, pactId: "p2", user: "me", text: "Just shipped the home tab", time: "17:20", type: "msg", read: true },
+  { id: 2, pactId: "p1", user: "Maya", ini: "M", col: "#C4A98A", name: "Maya",
+    text: "Morning. Ready for the 5k?", time: "8:12", type: "msg", read: true },
+  { id: 3, pactId: "p1", user: "me", text: "About to head out", time: "8:14", type: "msg", read: true },
+  { id: 4, pactId: "p1", user: "system",
+    text: "Maya completed today's run. 4 day streak.", time: "8:55", type: "system" },
+  { id: 5, pactId: "p1", user: "Maya", ini: "M", col: "#C4A98A", name: "Maya",
+    text: "Crushing it today.", time: "9:42", type: "msg", read: false },
+  // Incoming nudge from Maya — lights up the ReceivedNudgeBanner on Pact detail.
+  // The user has not acknowledged it yet (banner dismisses on tap and only for this session).
+  { id: 6, pactId: "p1", user: "Maya", ini: "M", col: "#C4A98A", name: "Maya",
+    text: "Maya nudged you", detail: "Don't forget the long run on Saturday. You've got this.",
+    time: "9:48", type: "nudge" },
+  // Progress system message (mid-thread, mostly to show the progress card path in chat).
+  { id: 7, pactId: "p1", user: "system", text: "Crew hit 68% this week",
+    pct: 68, time: "10:02", type: "progress" },
+
+  { id: 8, pactId: "p2", user: "system", text: "Yesterday", time: "", type: "date" },
+  { id: 9, pactId: "p2", user: "me", text: "Just shipped the home tab", time: "17:20",
+    type: "msg", read: true },
 ];

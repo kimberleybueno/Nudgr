@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 
 export type ConfettiTier = "task" | "goal" | "daily";
 
@@ -12,13 +12,13 @@ interface Props {
 
 const TIER_CFG = {
   task:  { count: 8,  travel: 60,  spread: 40,  duration: 700,  size: [8, 12] as const,  rot: 0,
-           colors: [C.sage, C.gold, C.warm],
+           colors: [N.sage, N.tan, N.tan],
            symbols: ["✦", "•", "★"] },
   goal:  { count: 22, travel: 120, spread: 80,  duration: 900,  size: [10, 18] as const, rot: 360,
-           colors: [C.sage, C.gold, C.warm, C.purple, "#D89BB4"],
+           colors: [N.sage, N.tan, N.tan, "#7D6B8A", "#D89BB4"],
            symbols: ["✦", "●", "★", "•", "🎯"] },
   daily: { count: 35, travel: 180, spread: 120, duration: 1200, size: [10, 22] as const, rot: 720,
-           colors: [C.sage, C.gold, C.warm, C.purple, "#D89BB4", C.sageDark],
+           colors: [N.sage, N.tan, N.tan, "#7D6B8A", "#D89BB4", N.sageDeep],
            symbols: ["✦", "●", "★", "🎉", "🏆", "✨"] },
 } as const;
 
@@ -109,11 +109,11 @@ export default function Confetti({ tier, onDone }: Props) {
           <div style={{ fontSize: active === "daily" ? 56 : 44 }}>
             {active === "daily" ? "🏆" : "🎯"}
           </div>
-          <div style={{ fontSize: active === "daily" ? 22 : 16, fontWeight: 700, color: C.sageDark, marginTop: 4 }}>
+          <div style={{ fontSize: active === "daily" ? 22 : 16, fontWeight: 700, color: N.sageDeep, marginTop: 4 }}>
             {active === "daily" ? "All Done!" : "Goal Complete!"}
           </div>
           {active === "daily" && (
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Incredible work</div>
+            <div style={{ fontSize: 12, color: N.inkSoft, marginTop: 2 }}>Incredible work</div>
           )}
         </div>
       )}

@@ -31,6 +31,21 @@ button, input, textarea, select { font-family: inherit; }
 /* Helper for Fraunces display type. Use on h1/h2/H3/big-stat surfaces. */
 .font-display { font-family: var(--font-display), Georgia, "Times New Roman", serif; }
 
+/* Visible focus ring per the kit. Keyboard navigation gets a 2px sage-deep
+   outline with a small offset; mouse focus stays subtle via :focus-visible. */
+*:focus-visible {
+  outline: 2px solid #4A6B4E;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Screen-reader-only utility (announce-only labels). */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
 /* hide scrollbars on horizontal scrollers */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
@@ -81,6 +96,13 @@ button, input, textarea, select { font-family: inherit; }
 }
 .anim-pulse { animation: pulse-ring 1.8s infinite; }
 
+/* Small dot pulse used in the hydration splash + brand glyphs. */
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%      { transform: scale(0.7);  opacity: 0.45; }
+}
+.dot-pulse { animation: dot-pulse 2.2s ease-in-out infinite; }
+
 /* ---------- Nudge (sec 11) ----------
    Soft poke wiggle, never bouncy. Origin lower-third so the head tilts
    while the body stays planted. Toast enter/exit follow the kit values. */
@@ -128,6 +150,7 @@ button, input, textarea, select { font-family: inherit; }
   .anim-toast-out { animation: none !important; opacity: 0 !important; transform: translateX(-50%) !important; }
   .anim-bubble-in   { animation: none !important; opacity: 1 !important; transform: none !important; }
   .anim-voice-ring  { animation: none !important; opacity: 0 !important; }
+  .dot-pulse        { animation: none !important; }
 }
 
 /* safe area helpers for iOS PWA */

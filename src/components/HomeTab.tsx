@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 import type { Task, Goal, Partner, UserData } from "@/types";
 import { refreshOverdue } from "@/lib/overdue";
 import { calculateStreak, recordCompletion } from "@/lib/streak";

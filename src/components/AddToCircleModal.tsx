@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 import type { Partner } from "@/types";
 
 interface Props {
@@ -43,13 +43,13 @@ export default function AddToCircleModal({ onCancel, onCreate }: Props) {
            className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 anim-slide-up">
 
         <div className="flex items-center justify-between mb-1">
-          <button onClick={onCancel} className="text-[12px] font-bold" style={{ color: C.muted }}>Cancel</button>
+          <button onClick={onCancel} className="text-[12px] font-bold" style={{ color: N.inkSoft }}>Cancel</button>
           <button onClick={submit} disabled={!nameValid}
                   className="text-[12px] font-bold disabled:opacity-40"
-                  style={{ color: C.sageDark }}>Add</button>
+                  style={{ color: N.sageDeep }}>Add</button>
         </div>
 
-        <h2 className="text-[18px] font-bold mb-4" style={{ color: C.sageDark }}>Add to Circle</h2>
+        <h2 className="text-[18px] font-bold mb-4" style={{ color: N.sageDeep }}>Add to Circle</h2>
 
         {/* Live avatar preview */}
         <div className="flex justify-center mb-4">
@@ -58,22 +58,22 @@ export default function AddToCircleModal({ onCancel, onCreate }: Props) {
         </div>
 
         <label className="block mb-4">
-          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>NAME</span>
+          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>NAME</span>
           <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
                  onKeyDown={(e) => { if (e.key === "Enter" && nameValid) submit(); }}
                  maxLength={40} placeholder="Sara"
                  className="w-full px-4 py-3 rounded-xl text-[15px] outline-none"
-                 style={{ background: C.bg, border: `1.5px solid ${name ? C.warm : C.faint}`, color: C.charcoal }} />
+                 style={{ background: N.cream, border: `1.5px solid ${name ? N.tan : N.line}`, color: N.ink }} />
         </label>
 
         <label className="block">
-          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>
+          <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>
             RELATIONSHIP <span className="font-normal" style={{ textTransform: "lowercase" }}>· optional</span>
           </span>
           <input value={relationship} onChange={(e) => setRelationship(e.target.value)}
                  maxLength={40} placeholder="Best friend, coach, accountability partner"
                  className="w-full px-4 py-3 rounded-xl text-[15px] outline-none"
-                 style={{ background: C.bg, border: `1.5px solid ${C.faint}`, color: C.charcoal }} />
+                 style={{ background: N.cream, border: `1.5px solid ${N.line}`, color: N.ink }} />
         </label>
       </div>
     </div>

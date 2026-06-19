@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { C, HERO_GRADIENT } from "@/lib/colors";
+import { N, HERO_GRADIENT } from "@/lib/colors";
 
 interface Props {
   onComplete: (name: string, primaryGoal: string) => void;
@@ -50,7 +50,7 @@ export default function OnboardingGate({ onComplete }: Props) {
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col anim-fade"
-      style={{ background: C.bg }}
+      style={{ background: N.cream }}
     >
       {/* Brand mark */}
       <div className="flex justify-center pt-12 pb-2">
@@ -63,15 +63,15 @@ export default function OnboardingGate({ onComplete }: Props) {
       <div className="flex-1 flex flex-col items-center px-6 pt-6 pb-10 max-w-[440px] w-full mx-auto">
         {step === 1 ? (
           <>
-            <h1 className="text-[26px] font-bold text-center" style={{ color: C.sageDark }}>
+            <h1 className="text-[26px] font-bold text-center" style={{ color: N.sageDeep }}>
               Welcome to Nudgr
             </h1>
-            <p className="text-[14px] text-center mt-2 mb-7" style={{ color: C.muted }}>
+            <p className="text-[14px] text-center mt-2 mb-7" style={{ color: N.inkSoft }}>
               Let&apos;s start with your name.
             </p>
 
             <label className="w-full">
-              <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>
+              <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>
                 YOUR NAME
               </span>
               <input
@@ -83,12 +83,12 @@ export default function OnboardingGate({ onComplete }: Props) {
                 className="w-full px-4 py-3.5 rounded-2xl text-[16px] outline-none"
                 style={{
                   background: "#fff",
-                  border: `1.5px solid ${name ? C.warm : C.faint}`,
-                  color: C.charcoal,
+                  border: `1.5px solid ${name ? N.tan : N.line}`,
+                  color: N.ink,
                 }}
                 autoComplete="given-name"
               />
-              <span className="block text-[11px] mt-1.5" style={{ color: C.muted }}>
+              <span className="block text-[11px] mt-1.5" style={{ color: N.inkSoft }}>
                 This is how you&apos;ll appear to your Circle and Pacts.
               </span>
             </label>
@@ -99,25 +99,25 @@ export default function OnboardingGate({ onComplete }: Props) {
               onClick={() => setStep(2)}
               disabled={!nameValid}
               className="w-full h-12 rounded-2xl text-[14px] font-bold text-white disabled:opacity-40"
-              style={{ background: C.sageDark }}
+              style={{ background: N.sageDeep }}
             >
               Continue
             </button>
-            <div className="text-[10px] font-bold tracking-wide mt-4" style={{ color: C.muted }}>
+            <div className="text-[10px] font-bold tracking-wide mt-4" style={{ color: N.inkSoft }}>
               STEP 1 OF 2
             </div>
           </>
         ) : (
           <>
-            <h1 className="text-[26px] font-bold text-center" style={{ color: C.sageDark }}>
+            <h1 className="text-[26px] font-bold text-center" style={{ color: N.sageDeep }}>
               What are you working on?
             </h1>
-            <p className="text-[14px] text-center mt-2 mb-7" style={{ color: C.muted }}>
+            <p className="text-[14px] text-center mt-2 mb-7" style={{ color: N.inkSoft }}>
               Pick one goal to start with. You can add more later.
             </p>
 
             <label className="w-full">
-              <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: C.muted }}>
+              <span className="block text-[11px] font-bold tracking-wide mb-1.5" style={{ color: N.inkSoft }}>
                 MY PRIMARY GOAL
               </span>
               <input
@@ -129,11 +129,11 @@ export default function OnboardingGate({ onComplete }: Props) {
                 className="w-full px-4 py-3.5 rounded-2xl text-[16px] outline-none"
                 style={{
                   background: "#fff",
-                  border: `1.5px solid ${goal ? C.warm : C.faint}`,
-                  color: C.charcoal,
+                  border: `1.5px solid ${goal ? N.tan : N.line}`,
+                  color: N.ink,
                 }}
               />
-              <span className="block text-[11px] mt-1.5" style={{ color: C.muted }}>
+              <span className="block text-[11px] mt-1.5" style={{ color: N.inkSoft }}>
                 We&apos;ll set this up as your first goal.
               </span>
             </label>
@@ -145,9 +145,9 @@ export default function OnboardingGate({ onComplete }: Props) {
                   onClick={() => setGoal(p)}
                   className="px-3 py-2 rounded-full text-[12px] font-semibold"
                   style={{
-                    background: goal === p ? C.sage : "transparent",
-                    color: goal === p ? "#fff" : C.warm,
-                    border: `1px solid ${goal === p ? C.sage : C.warm}`,
+                    background: goal === p ? N.sage : "transparent",
+                    color: goal === p ? "#fff" : N.tan,
+                    border: `1px solid ${goal === p ? N.sage : N.tan}`,
                   }}
                 >{p}</button>
               ))}
@@ -156,22 +156,22 @@ export default function OnboardingGate({ onComplete }: Props) {
             <div className="flex-1" />
 
             {err && (
-              <div className="text-[12px] text-center mb-3" style={{ color: C.urgent }}>{err}</div>
+              <div className="text-[12px] text-center mb-3" style={{ color: "#A8483A" }}>{err}</div>
             )}
             <button
               onClick={submit}
               disabled={!goalValid || submitting}
               className="w-full h-12 rounded-2xl text-[14px] font-bold text-white disabled:opacity-40"
-              style={{ background: C.sageDark }}
+              style={{ background: N.sageDeep }}
             >
               {submitting ? "Saving..." : "Start using Nudgr"}
             </button>
             <button
               onClick={() => setStep(1)}
               className="text-[12px] font-semibold mt-3"
-              style={{ color: C.muted }}
+              style={{ color: N.inkSoft }}
             >Back</button>
-            <div className="text-[10px] font-bold tracking-wide mt-4" style={{ color: C.muted }}>
+            <div className="text-[10px] font-bold tracking-wide mt-4" style={{ color: N.inkSoft }}>
               STEP 2 OF 2
             </div>
           </>

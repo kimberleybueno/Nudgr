@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 
 interface Props {
   /** Currently selected day-of-month (1-31) */
@@ -41,16 +41,16 @@ export default function Calendar({ selectedDay, onSelect, daysWithTasks }: Props
         <button
           onClick={() => setCursor(new Date(year, month - 1, 1))}
           className="w-8 h-8 flex items-center justify-center text-lg"
-          style={{ color: C.muted }}
+          style={{ color: N.inkSoft }}
           aria-label="Previous month"
         >‹</button>
-        <h2 className="text-[14px] font-bold" style={{ color: C.sageDark }}>
+        <h2 className="text-[14px] font-bold" style={{ color: N.sageDeep }}>
           {cursor.toLocaleString(undefined, { month: "long", year: "numeric" })}
         </h2>
         <button
           onClick={() => setCursor(new Date(year, month + 1, 1))}
           className="w-8 h-8 flex items-center justify-center text-lg"
-          style={{ color: C.muted }}
+          style={{ color: N.inkSoft }}
           aria-label="Next month"
         >›</button>
       </div>
@@ -78,9 +78,9 @@ export default function Calendar({ selectedDay, onSelect, daysWithTasks }: Props
               }}
               className="shrink-0 flex flex-col items-center justify-center w-10 h-12 relative"
               style={{
-                background: isSelected ? C.sage : "#fff",
-                color: isSelected ? "#fff" : isToday ? C.sageDark : C.charcoal,
-                border: `1px solid ${isSelected ? "transparent" : isToday ? C.sage : C.faint}`,
+                background: isSelected ? N.sage : "#fff",
+                color: isSelected ? "#fff" : isToday ? N.sageDeep : N.ink,
+                border: `1px solid ${isSelected ? "transparent" : isToday ? N.sage : N.line}`,
                 borderRadius: 14,
               }}
             >
@@ -94,7 +94,7 @@ export default function Calendar({ selectedDay, onSelect, daysWithTasks }: Props
                   style={{
                     bottom: 4,
                     width: 4, height: 4, borderRadius: 2,
-                    background: isToday ? C.sage : C.muted,
+                    background: isToday ? N.sage : N.inkSoft,
                   }}
                 />
               )}

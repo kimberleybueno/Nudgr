@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { N } from "@/lib/colors";
 import type { Pact, Message } from "@/types";
 import ReceivedNudgeBanner from "./ReceivedNudgeBanner";
+import Sheet from "./Sheet";
 
 interface Props {
   pact: Pact;
@@ -50,6 +51,7 @@ export default function PactDetail({
   embedded = false,
 }: Props) {
   const [dismissedNudgeIds, setDismissedNudgeIds] = useState<Set<number>>(new Set());
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Latest unacknowledged incoming nudge in this thread (sender is not "me").
   const incomingNudge = useMemo(() => {
@@ -134,7 +136,9 @@ export default function PactDetail({
 
         <button
           type="button"
+          onClick={() => setSettingsOpen(true)}
           aria-label="Pact settings"
+          aria-haspopup="dialog"
           className="shrink-0 flex items-center justify-center"
           style={{
             width: 32, height: 32, borderRadius: 999,
@@ -244,6 +248,22 @@ export default function PactDetail({
             </ul>
           </div>
 
+          {/* Pact settings sheet (stub — real settings land in a later pass) */}
+          <Sheet
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            title="Pact settings"
+            subtitle="More options coming soon."
+            isDesktop={embedded}
+          >
+            <ul className="flex flex-col gap-1" style={{ listStyle: "none", padding: 0 }}>
+              <StubRow label="Mute notifications" />
+              <StubRow label="Rename Pact" />
+              <StubRow label="Invite a friend" />
+              <StubRow label="Leave Pact" danger />
+            </ul>
+          </Sheet>
+
           {/* Primary + secondary actions */}
           <div className="flex flex-col gap-2" style={{ marginTop: 22 }}>
             <button
@@ -281,6 +301,33 @@ export default function PactDetail({
         </div>
       </div>
     </div>
+  );
+}
+
+/* =============== Stub settings row =============== */
+
+function StubRow({ label, danger }: { label: string; danger?: boolean }) {
+  return (
+    <li>
+      <button
+        type="button"
+        disabled
+        aria-disabled="true"
+        className="w-full text-left rounded-xl"
+        style={{
+          background: "transparent",
+          color: danger ? "#A8483A" : N.ink,
+          padding: "12px 14px",
+          fontSize: 14,
+          fontWeight: 500,
+          opacity: 0.55,
+          border: `1px solid ${N.line}`,
+          cursor: "not-allowed",
+        }}
+      >
+        {label}
+      </button>
+    </li>
   );
 }
 

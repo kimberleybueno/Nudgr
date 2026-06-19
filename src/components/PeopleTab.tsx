@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 import type { Pact, Message, Goal, Partner, UserData } from "@/types";
 import PactChat from "./PactChat";
 import PactDetail from "./PactDetail";
@@ -363,12 +363,12 @@ export default function PeopleTab({
       <div className="px-6 pt-12 lg:pt-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: C.muted }}>ACCOUNTABILITY</p>
-            <h1 className="text-[24px] font-light mt-1" style={{ color: C.charcoal }}>{sectionTitle}</h1>
+            <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: N.inkSoft }}>ACCOUNTABILITY</p>
+            <h1 className="text-[24px] font-light mt-1" style={{ color: N.ink }}>{sectionTitle}</h1>
           </div>
           <button onClick={triggerInvite}
                   className="px-4 py-2 rounded-xl text-[12px] font-bold text-white"
-                  style={{ background: C.sage }}>+ Invite</button>
+                  style={{ background: N.sage }}>+ Invite</button>
         </div>
       </div>
 
@@ -376,11 +376,11 @@ export default function PeopleTab({
       {(!section || section === "pacts") && (
       <section className="px-5 pt-5">
         <div className="flex items-center justify-between mb-2.5">
-          <div className="text-[12px] font-bold tracking-wide" style={{ color: C.sage }}>Pacts</div>
+          <div className="text-[12px] font-bold tracking-wide" style={{ color: N.sage }}>Pacts</div>
           {sortedPacts.length > 0 && (
             <button onClick={() => setShowCreatePact(true)}
                     className="px-2.5 h-7 rounded-md text-[10px] font-bold"
-                    style={{ background: C.sage + "1a", color: C.sage, border: `1px solid ${C.sage}40` }}>
+                    style={{ background: N.sage + "1a", color: N.sage, border: `1px solid ${N.sage}40` }}>
               + New Pact
             </button>
           )}
@@ -406,7 +406,7 @@ export default function PeopleTab({
 
       {!section && (
         <div className="px-5 my-3">
-          <div className="h-px" style={{ background: C.faint }} />
+          <div className="h-px" style={{ background: N.line }} />
         </div>
       )}
 
@@ -414,11 +414,11 @@ export default function PeopleTab({
       {(!section || section === "crew") && (
       <section className="px-5 pb-6">
         <div className="flex items-center justify-between mb-2.5">
-          <div className="text-[12px] font-bold tracking-wide" style={{ color: C.warm }}>Circle</div>
+          <div className="text-[12px] font-bold tracking-wide" style={{ color: N.tan }}>Circle</div>
           {circle.length > 0 && (
             <button onClick={() => setShowAddCircle(true)}
                     className="px-2.5 h-7 rounded-md text-[10px] font-bold"
-                    style={{ background: C.warm + "1a", color: C.warm, border: `1px solid ${C.warm}40` }}>
+                    style={{ background: N.tan + "1a", color: N.tan, border: `1px solid ${N.tan}40` }}>
               + Add
             </button>
           )}
@@ -442,7 +442,7 @@ export default function PeopleTab({
               />
               <button onClick={triggerInvite}
                       className="text-[11px] font-bold mt-2 mx-auto block"
-                      style={{ color: C.muted }}>
+                      style={{ color: N.inkSoft }}>
                 Or invite a friend to Nudgr
               </button>
             </>
@@ -512,7 +512,7 @@ export default function PeopleTab({
       {isDesktop ? (
         <div className="anim-up flex gap-6 items-start px-4 py-4">
           <div className="shrink-0 rounded-3xl overflow-hidden"
-               style={{ width: 380, background: "#fff", border: `1px solid ${C.faint}` }}>
+               style={{ width: 380, background: "#fff", border: `1px solid ${N.line}` }}>
             {listColumn}
           </div>
           <div className="flex-1 min-w-0 sticky top-4">{detailColumn}</div>
@@ -565,12 +565,12 @@ function EmptyState({ heading, body, cta, onCta }: {
 }) {
   return (
     <div className="rounded-2xl px-5 py-7 text-center"
-         style={{ background: C.bg, border: `1px dashed ${C.faint}` }}>
-      <div className="text-[13px] font-bold mb-1.5" style={{ color: C.sageDark }}>{heading}</div>
-      <div className="text-[11px] mb-3 max-w-[260px] mx-auto leading-relaxed" style={{ color: C.muted }}>{body}</div>
+         style={{ background: N.cream, border: `1px dashed ${N.line}` }}>
+      <div className="text-[13px] font-bold mb-1.5" style={{ color: N.sageDeep }}>{heading}</div>
+      <div className="text-[11px] mb-3 max-w-[260px] mx-auto leading-relaxed" style={{ color: N.inkSoft }}>{body}</div>
       <button onClick={onCta}
               className="px-4 h-9 rounded-xl text-[12px] font-bold text-white"
-              style={{ background: C.sage }}>{cta}</button>
+              style={{ background: N.sage }}>{cta}</button>
     </div>
   );
 }
@@ -578,10 +578,10 @@ function EmptyState({ heading, body, cta, onCta }: {
 function EmptyDetail() {
   return (
     <div className="rounded-3xl flex flex-col items-center justify-center text-center py-24 px-6"
-         style={{ background: "#fff", border: `1px dashed ${C.faint}`, minHeight: 500 }}>
+         style={{ background: "#fff", border: `1px dashed ${N.line}`, minHeight: 500 }}>
       <div className="text-5xl mb-3 opacity-50">👈</div>
-      <div className="text-[15px] font-bold mb-2" style={{ color: C.sageDark }}>Pick a Pact or partner</div>
-      <div className="text-[12px] max-w-[260px]" style={{ color: C.muted }}>
+      <div className="text-[15px] font-bold mb-2" style={{ color: N.sageDeep }}>Pick a Pact or partner</div>
+      <div className="text-[12px] max-w-[260px]" style={{ color: N.inkSoft }}>
         Open a Pact to chat, or open a partner to nudge them and see your shared goals.
       </div>
     </div>
@@ -597,25 +597,25 @@ function PactRow({ pact, active, onTap, onLongPress }: { pact: Pact; active?: bo
             className="relative text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl"
             style={{
               background: active
-                ? `linear-gradient(135deg, ${C.sage}1a, ${C.light})`
-                : pact.pinned ? `linear-gradient(135deg, ${C.light}, #f0f6f0)` : "#fff",
-              border: `1px solid ${active ? C.sage : pact.unread > 0 ? C.sage + "55" : C.faint}`,
+                ? `linear-gradient(135deg, ${N.sage}1a, ${N.sageTint14})`
+                : pact.pinned ? `linear-gradient(135deg, ${N.sageTint14}, #f0f6f0)` : "#fff",
+              border: `1px solid ${active ? N.sage : pact.unread > 0 ? N.sage + "55" : N.line}`,
             }}>
       {pact.pinned && <span className="absolute top-2 right-2.5 text-[10px]">📌</span>}
       <div className="w-[42px] h-[42px] rounded-xl flex items-center justify-center text-[20px] shrink-0"
-           style={{ background: `linear-gradient(135deg, ${C.sage}33, ${C.light})` }}>{pact.emoji}</div>
+           style={{ background: `linear-gradient(135deg, ${N.sage}33, ${N.sageTint14})` }}>{pact.emoji}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-[14px] font-bold truncate" style={{ color: C.charcoal }}>{pact.name}</span>
+          <span className="text-[14px] font-bold truncate" style={{ color: N.ink }}>{pact.name}</span>
           {pact.unread > 0 && (
             <span className="text-[9px] font-extrabold text-white px-1.5 py-0.5 rounded-md"
-                  style={{ background: C.sage }}>{pact.unread}</span>
+                  style={{ background: N.sage }}>{pact.unread}</span>
           )}
         </div>
-        <div className="text-[11px] truncate mt-0.5" style={{ color: C.muted }}>{pact.last}</div>
+        <div className="text-[11px] truncate mt-0.5" style={{ color: N.inkSoft }}>{pact.last}</div>
       </div>
       <div className="text-right shrink-0">
-        <div className="text-[10px]" style={{ color: C.muted }}>{pact.time}</div>
+        <div className="text-[10px]" style={{ color: N.inkSoft }}>{pact.time}</div>
         <div className="flex mt-1">
           {pact.members.slice(0, 3).map((m, i) => (
             <span key={i} className="rounded-full text-[7px] font-extrabold flex items-center justify-center text-white"
@@ -640,8 +640,8 @@ function CircleRow({ person, active, onTap, onNudge, canNudge, wiggling }: {
     <button onClick={onTap}
             className="text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl"
             style={{
-              background: active ? `linear-gradient(135deg, ${C.warm}15, ${C.light})` : "#fff",
-              border: `1px solid ${active ? C.warm : C.faint}`,
+              background: active ? `linear-gradient(135deg, ${N.tan}15, ${N.sageTint14})` : "#fff",
+              border: `1px solid ${active ? N.tan : N.line}`,
             }}>
       <div className="relative shrink-0">
         <div
@@ -656,21 +656,21 @@ function CircleRow({ person, active, onTap, onNudge, canNudge, wiggling }: {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-bold" style={{ color: C.charcoal }}>{person.name}</div>
-        <div className="text-[11px] mt-0.5" style={{ color: C.muted }}>{person.status}</div>
+        <div className="text-[14px] font-bold" style={{ color: N.ink }}>{person.name}</div>
+        <div className="text-[11px] mt-0.5" style={{ color: N.inkSoft }}>{person.status}</div>
         {person.sharedGoals.length > 0 && (
-          <div className="text-[10px] mt-0.5 truncate" style={{ color: C.sage }}>
+          <div className="text-[10px] mt-0.5 truncate" style={{ color: N.sage }}>
             Holding you accountable on: {person.sharedGoals.join(", ")}
           </div>
         )}
       </div>
       <div className="text-right shrink-0">
-        <div className="text-[13px] font-extrabold" style={{ color: C.gold }}>{person.streak} day streak</div>
+        <div className="text-[13px] font-extrabold" style={{ color: N.tan }}>{person.streak} day streak</div>
         <span onClick={(e) => { e.stopPropagation(); onNudge(); }}
               className="inline-block mt-1 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
               style={{
-                background: canNudge ? C.sage + "1f" : C.bg,
-                color: canNudge ? C.sage : C.muted,
+                background: canNudge ? N.sage + "1f" : N.cream,
+                color: canNudge ? N.sage : N.inkSoft,
               }}>
           {canNudge ? "Nudge" : "Nudged recently"}
         </span>

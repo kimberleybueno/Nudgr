@@ -31,9 +31,9 @@ export default function Shell() {
   const [tab, setTab] = useState<TabId>("goals");
   const [speakOpen, setSpeakOpen] = useState(false);
 
-  const [user, setUser] = useLocalStorage<UserData>(STORAGE_KEYS.user, EMPTY_USER);
-  const [pacts, setPacts]       = useLocalStorage<Pact[]>(STORAGE_KEYS.pacts, EMPTY_PACTS);
-  const [messages, setMessages] = useLocalStorage<Message[]>(STORAGE_KEYS.messages, EMPTY_MESSAGES);
+  const [user, setUser, userMeta]       = useLocalStorage<UserData>(STORAGE_KEYS.user, EMPTY_USER);
+  const [pacts, setPacts]               = useLocalStorage<Pact[]>(STORAGE_KEYS.pacts, EMPTY_PACTS);
+  const [messages, setMessages]         = useLocalStorage<Message[]>(STORAGE_KEYS.messages, EMPTY_MESSAGES);
 
   const completeOnboarding = (name: string, primaryGoal: string) => {
     const nowIso = new Date().toISOString();
@@ -73,6 +73,30 @@ export default function Shell() {
     setUser((u) => ({ ...u, tasks: [newTask, ...u.tasks] }));
     setTab("goals");
   };
+
+  // Hydration splash: until the user record has been read from localStorage,
+  // show a calm cream screen with the wordmark dot. Avoids the OnboardingGate
+  // flashing for one paint when a returning user has data on disk.
+  if (!userMeta.hydrated) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#F7F4EC" }}
+        aria-label="Loading"
+        role="status"
+      >
+        <span
+          aria-hidden="true"
+          className="dot-pulse block rounded-full"
+          style={{
+            width: 14, height: 14,
+            background: "#7A9E7E",
+            boxShadow: "0 0 0 5px rgba(122, 158, 126, 0.22)",
+          }}
+        />
+      </div>
+    );
+  }
 
   // Gate: until onboarded, show the OnboardingGate over everything.
   if (!user.onboardedAt) {

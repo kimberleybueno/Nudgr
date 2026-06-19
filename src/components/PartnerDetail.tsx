@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 
 interface Person {
   id: string;
@@ -47,8 +47,8 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
     <div
       className={embedded ? "anim-up rounded-3xl overflow-hidden" : "anim-up min-h-screen"}
       style={{
-        background: C.bg,
-        border: embedded ? `1px solid ${C.faint}` : "none",
+        background: N.cream,
+        border: embedded ? `1px solid ${N.line}` : "none",
       }}
     >
       {/* Header */}
@@ -58,7 +58,7 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
       >
         {!embedded && (
           <button onClick={onBack} className="text-[18px] mb-4 w-7 h-7 flex items-center justify-center"
-                  style={{ color: C.sage }} aria-label="Back">‹</button>
+                  style={{ color: N.sage }} aria-label="Back">‹</button>
         )}
         <div className="text-center">
           <div className="relative inline-block">
@@ -73,13 +73,13 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
               />
             )}
           </div>
-          <div className="text-[20px] font-bold mt-2.5" style={{ color: C.charcoal }}>{person.name}</div>
-          <div className="text-[12px]" style={{ color: C.muted }}>{person.status}</div>
+          <div className="text-[20px] font-bold mt-2.5" style={{ color: N.ink }}>{person.name}</div>
+          <div className="text-[12px]" style={{ color: N.inkSoft }}>{person.status}</div>
 
           <div className="flex gap-4 justify-center mt-4">
-            <Stat value={`${person.streak}`} label="Day streak" color={C.gold} />
-            <Stat value="78%" label="This week" color={C.sage} />
-            <Stat value={`${person.sharedGoals.length || 0}`} label="Shared goals" color={C.charcoal} />
+            <Stat value={`${person.streak}`} label="Day streak" color={N.tan} />
+            <Stat value="78%" label="This week" color={N.sage} />
+            <Stat value={`${person.sharedGoals.length || 0}`} label="Shared goals" color={N.ink} />
           </div>
         </div>
       </div>
@@ -88,37 +88,37 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
       <div className="p-5">
         {person.goals.length > 0 ? (
           <>
-            <div className="text-[11px] font-bold tracking-wide mb-2" style={{ color: C.muted }}>
+            <div className="text-[11px] font-bold tracking-wide mb-2" style={{ color: N.inkSoft }}>
               THEIR GOALS
             </div>
             {person.goals.map((g, i) => (
-              <div key={i} className="rounded-2xl p-3.5 mb-2" style={{ background: "#fff", border: `1px solid ${C.faint}` }}>
-                <div className="text-[14px] font-bold mb-2" style={{ color: C.charcoal }}>{g.title}</div>
+              <div key={i} className="rounded-2xl p-3.5 mb-2" style={{ background: "#fff", border: `1px solid ${N.line}` }}>
+                <div className="text-[14px] font-bold mb-2" style={{ color: N.ink }}>{g.title}</div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full" style={{ background: C.faint }}>
-                    <div className="h-full rounded-full" style={{ width: `${g.pct}%`, background: C.sage }} />
+                  <div className="flex-1 h-1.5 rounded-full" style={{ background: N.line }}>
+                    <div className="h-full rounded-full" style={{ width: `${g.pct}%`, background: N.sage }} />
                   </div>
-                  <span className="text-[12px] font-bold" style={{ color: C.sage }}>{g.pct}%</span>
+                  <span className="text-[12px] font-bold" style={{ color: N.sage }}>{g.pct}%</span>
                 </div>
               </div>
             ))}
           </>
         ) : (
-          <div className="text-center py-4 text-[12px]" style={{ color: C.muted }}>
+          <div className="text-center py-4 text-[12px]" style={{ color: N.inkSoft }}>
             {person.name}&apos;s personal goals aren&apos;t shared with you yet
           </div>
         )}
 
         {person.sharedGoals.length > 0 && (
           <>
-            <div className="text-[11px] font-bold tracking-wide mt-4 mb-2" style={{ color: C.muted }}>
+            <div className="text-[11px] font-bold tracking-wide mt-4 mb-2" style={{ color: N.inkSoft }}>
               HOLDING YOU ACCOUNTABLE ON
             </div>
             {person.sharedGoals.map((g, i) => (
               <div
                 key={i}
                 className="rounded-xl px-3.5 py-2.5 mb-1.5 text-[13px] font-semibold"
-                style={{ background: C.sage + "10", border: `1px solid ${C.sage}25`, color: C.sage }}
+                style={{ background: N.sage + "10", border: `1px solid ${N.sage}25`, color: N.sage }}
               >🎯 {g}</div>
             ))}
           </>
@@ -129,14 +129,14 @@ export default function PartnerDetail({ person, onBack, onNudge, onMessage, canN
             onClick={handleNudge}
             disabled={disabled}
             className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold text-white"
-            style={{ background: disabled ? C.muted : C.sage, opacity: disabled ? 0.6 : 1 }}
+            style={{ background: disabled ? N.inkSoft : N.sage, opacity: disabled ? 0.6 : 1 }}
           >
             {justSent ? "Sent" : !canNudge ? "Nudged recently" : "Send a nudge"}
           </button>
           <button
             onClick={onMessage}
             className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold"
-            style={{ background: C.bg, color: C.charcoal, border: `1px solid ${C.faint}` }}
+            style={{ background: N.cream, color: N.ink, border: `1px solid ${N.line}` }}
           >💬 Message</button>
         </div>
       </div>
@@ -148,7 +148,7 @@ function Stat({ value, label, color }: { value: string; label: string; color: st
   return (
     <div className="text-center">
       <div className="text-[18px] font-extrabold" style={{ color }}>{value}</div>
-      <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>{label}</div>
+      <div className="text-[10px] mt-0.5" style={{ color: N.inkSoft }}>{label}</div>
     </div>
   );
 }

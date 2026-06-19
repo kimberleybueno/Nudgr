@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C } from "@/lib/colors";
+import { N } from "@/lib/colors";
 import { STORAGE_KEYS } from "@/lib/storage";
 import { SAMPLE_USER, SAMPLE_PACTS, SAMPLE_MESSAGES } from "@/lib/seed";
 import type { UserData, Pact, Message } from "@/types";
@@ -80,8 +80,8 @@ export default function SettingsTab({ user, setUser, setPacts, setMessages }: Pr
   return (
     <div className="anim-up pb-6">
       <div className="px-5 pt-12 pb-4">
-        <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: C.muted }}>PREFERENCES</p>
-        <h1 className="text-[24px] font-light mt-1" style={{ color: C.charcoal }}>Settings</h1>
+        <p className="text-[10px] font-semibold tracking-[0.1em]" style={{ color: N.inkSoft }}>PREFERENCES</p>
+        <h1 className="text-[24px] font-light mt-1" style={{ color: N.ink }}>Settings</h1>
       </div>
 
       {/* Profile */}
@@ -105,7 +105,7 @@ export default function SettingsTab({ user, setUser, setPacts, setMessages }: Pr
           on={dailyReminder}
           onChange={setDailyReminder}
         />
-        <p className="px-5 py-2 text-[11px] italic" style={{ color: C.muted }}>
+        <p className="px-5 py-2 text-[11px] italic" style={{ color: N.inkSoft }}>
           Push reminders coming soon. We&apos;ll let you know.
         </p>
       </Section>
@@ -149,7 +149,7 @@ export default function SettingsTab({ user, setUser, setPacts, setMessages }: Pr
             onKeyDown={(e) => { if (e.key === "Enter") saveName(); }}
             placeholder="Your name"
             className="w-full px-4 py-3 rounded-xl text-[15px] outline-none"
-            style={{ background: C.bg, border: `1.5px solid ${C.faint}`, color: C.charcoal }}
+            style={{ background: N.cream, border: `1.5px solid ${N.line}`, color: N.ink }}
           />
         </EditModal>
       )}
@@ -168,7 +168,7 @@ export default function SettingsTab({ user, setUser, setPacts, setMessages }: Pr
             onKeyDown={(e) => { if (e.key === "Enter") saveGoal(); }}
             placeholder="My primary goal"
             className="w-full px-4 py-3 rounded-xl text-[15px] outline-none"
-            style={{ background: C.bg, border: `1.5px solid ${C.faint}`, color: C.charcoal }}
+            style={{ background: N.cream, border: `1.5px solid ${N.line}`, color: N.ink }}
           />
         </EditModal>
       )}
@@ -176,7 +176,7 @@ export default function SettingsTab({ user, setUser, setPacts, setMessages }: Pr
       {toast && (
         <div
           className="fixed left-1/2 bottom-24 z-[110] px-4 py-2 rounded-full text-[12px] font-bold text-white anim-fade"
-          style={{ background: C.sageDark, transform: "translateX(-50%)" }}
+          style={{ background: N.sageDeep, transform: "translateX(-50%)" }}
         >{toast}</div>
       )}
     </div>
@@ -186,10 +186,10 @@ export default function SettingsTab({ user, setUser, setPacts, setMessages }: Pr
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="mb-6">
-      <div className="px-5 pb-1.5 text-[10px] font-bold tracking-wide" style={{ color: C.muted }}>
+      <div className="px-5 pb-1.5 text-[10px] font-bold tracking-wide" style={{ color: N.inkSoft }}>
         {label.toUpperCase()}
       </div>
-      <div className="bg-white" style={{ borderTop: `1px solid ${C.faint}`, borderBottom: `1px solid ${C.faint}` }}>
+      <div className="bg-white" style={{ borderTop: `1px solid ${N.line}`, borderBottom: `1px solid ${N.line}` }}>
         {children}
       </div>
     </section>
@@ -202,35 +202,35 @@ function Row({ label, value, hint, onClick, danger }: {
   const inner = (
     <div className="flex items-center justify-between px-5 py-3.5">
       <div>
-        <div className="text-[14px] font-semibold" style={{ color: danger ? C.urgent : C.charcoal }}>
+        <div className="text-[14px] font-semibold" style={{ color: danger ? "#A8483A" : N.ink }}>
           {label}
         </div>
-        {hint && <div className="text-[11px] mt-0.5" style={{ color: C.muted }}>{hint}</div>}
+        {hint && <div className="text-[11px] mt-0.5" style={{ color: N.inkSoft }}>{hint}</div>}
       </div>
       <div className="flex items-center gap-2">
-        {value && <span className="text-[13px]" style={{ color: C.muted }}>{value}</span>}
-        {onClick && <span className="text-[14px]" style={{ color: C.muted }}>›</span>}
+        {value && <span className="text-[13px]" style={{ color: N.inkSoft }}>{value}</span>}
+        {onClick && <span className="text-[14px]" style={{ color: N.inkSoft }}>›</span>}
       </div>
     </div>
   );
   return onClick ? (
-    <button onClick={onClick} className="w-full text-left" style={{ borderBottom: `1px solid ${C.faint}` }}>
+    <button onClick={onClick} className="w-full text-left" style={{ borderBottom: `1px solid ${N.line}` }}>
       {inner}
     </button>
   ) : (
-    <div style={{ borderBottom: `1px solid ${C.faint}` }}>{inner}</div>
+    <div style={{ borderBottom: `1px solid ${N.line}` }}>{inner}</div>
   );
 }
 
 function ToggleRow({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: `1px solid ${C.faint}` }}>
-      <span className="text-[14px] font-semibold" style={{ color: C.charcoal }}>{label}</span>
+    <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: `1px solid ${N.line}` }}>
+      <span className="text-[14px] font-semibold" style={{ color: N.ink }}>{label}</span>
       <button
         onClick={() => onChange(!on)}
         aria-pressed={on}
         className="relative w-11 h-6 rounded-full transition-colors"
-        style={{ background: on ? C.sage : C.faint }}
+        style={{ background: on ? N.sage : N.line }}
       >
         <span
           className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform"
@@ -248,15 +248,15 @@ function EditModal({
     <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center anim-fade" style={{ background: "rgba(45,45,45,0.45)" }} onClick={onCancel}>
       <div onClick={(e) => e.stopPropagation()}
            className="w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-3xl p-5 anim-slide-up">
-        <div className="text-[15px] font-bold mb-3" style={{ color: C.sageDark }}>{title}</div>
+        <div className="text-[15px] font-bold mb-3" style={{ color: N.sageDeep }}>{title}</div>
         {children}
         <div className="flex gap-2 mt-4">
           <button onClick={onCancel}
                   className="flex-1 h-11 rounded-xl text-[13px] font-bold"
-                  style={{ background: C.bg, color: C.muted, border: `1px solid ${C.faint}` }}>Cancel</button>
+                  style={{ background: N.cream, color: N.inkSoft, border: `1px solid ${N.line}` }}>Cancel</button>
           <button onClick={onSave} disabled={!canSave}
                   className="flex-1 h-11 rounded-xl text-[13px] font-bold text-white disabled:opacity-40"
-                  style={{ background: C.sageDark }}>Save</button>
+                  style={{ background: N.sageDeep }}>Save</button>
         </div>
       </div>
     </div>
